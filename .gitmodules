@@ -1,0 +1,3 @@
+[submodule "POO/cursostec-profe"]
+	path = POO/cursostec-profe
+	url = https://github.com/vsurak/cursostec.git
