@@ -4,6 +4,6 @@ package poderes;
 // es decir, solo se declara el nombre (signature) del comportamiento
 // pero no se implementa, es decir no tiene código
 // las interfaces también pueden tener definiciones de atributos static
-public interface IPower 
-    public void dispararPoder();
-}¨#somenonsese
+public interface IPower {
+    void dispararPoder();
+}

@@ -50,6 +50,7 @@ package personas;
 import poderes.*;
 
 public class Persona {
+    private static int totalPersonas;
     private byte edad;  // cuando no se especifica la visibilidad, el default es protected
     protected String nombre;
     private double deudasAPagar;
@@ -61,9 +62,10 @@ public class Persona {
     // constructor no tiene valor de retorno, y debe llamarse igual que la clase
     public Persona() { // los constructores primero reservan memoria y luego se ejecutan
         // inicializar persona con sus datos, edad y nombre. 
-        edad = 48;
-        nombre = "rodrigo nunez";
+        edad = 19;
+        nombre = "patrick zuniga";
         deudasAPagar = 10000;
+        totalPersonas++;
     }
 
     // Un segundo constructor que si recibe parámetros
@@ -95,6 +97,24 @@ public class Persona {
         return this.nombre;
     }
 
+    public void setNombre(String pNombre) {
+        if (pNombre != null && !pNombre.trim().isEmpty()) {
+            this.nombre = pNombre;
+        }
+    }
+
+    public static int getTotalPersonas() {
+        return totalPersonas;
+    }
+
+    protected String identidad() {
+        return nombre;
+    }
+
+    public void trabajar() {
+        System.out.println(identidad() + " realiza un trabajo general.");
+    }
+
     // a esto se le va a llamar getters and setters
     // métodos get para leer los valores de los atributos de la instancia
     // métodos set para escribir los valores de los atributos de la instancia
@@ -115,11 +135,11 @@ public class Persona {
     public void cantar() {
         // impriman un verso de no más de 4 líneas, de una canción que les guste y el autor.
         //this.status = CANTANDO; esto seria visible solo internamente en el class 
-        System.out.println("Ya me siento un niño de papel que vive con miedo de olvidar" + "\n" +
-            "Cuando sonrojabas esas mejillas con sentimientos de cristal" + "\n" +
-            "Por la noche, exploto y pienso en terminar con todo y volver a mí" + "\n" +
-            "Hoy la vida llora porque perdió otra hermosa flor de su jardín."  + "\n" + 
-            "Milo J");
+        System.out.println("Acaricia mi ensueño, el suave murmullo de tu suspirar" + "\n" +
+            "Como ríe la vida si tus ojos negros me quieren mirar" + "\n" +
+            "Y si es mío el amparo de tu risa leve que es como un cantar" + "\n" +
+            "Ella aquieta mi herida, todo, todo se olvida."  + "\n" + 
+            "Carlos Gardel");
     }
     
     public void setPower(IPower pPower) {
@@ -127,6 +147,10 @@ public class Persona {
     }
 
     public void atacar() {
+        if (this.power == null) {
+            System.out.println(nombre + " no tiene un poder asignado.");
+            return;
+        }
         this.power.dispararPoder();
     }
 }

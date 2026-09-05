@@ -1,3 +1,7 @@
+package profesiones;
+
+import personas.Persona;
+
 public class Mecánico extends Persona {
 	// private: los datos del mecanico quedan protegidos de cambios directos.
 	private String especialidad;

@@ -1,3 +1,7 @@
+package profesiones;
+
+import personas.Persona;
+
 public class IAEngineer extends Persona {
 	// private protege los datos propios del ingeniero de IA.
     private String especialidad;

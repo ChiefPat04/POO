@@ -1,3 +1,5 @@
+package poderes;
+
 public class PoderVelocidad implements IPower {
     public PoderVelocidad() {
     }

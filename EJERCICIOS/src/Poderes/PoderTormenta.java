@@ -1,3 +1,5 @@
+package poderes;
+
 public class PoderTormenta implements IPower {
     public PoderTormenta() {
     }

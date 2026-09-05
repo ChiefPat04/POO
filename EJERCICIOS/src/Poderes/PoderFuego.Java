@@ -1,10 +1,8 @@
-public class PoderFuego implements IPower {
-    public PoderFuego() {
-    }
+package poderes;
 
+public class PoderFuego implements IPower {
     @Override
     public void dispararPoder() {
-        System.out.println("🔥🔥🔥🔥🔥🔥🔥🔥");
+        System.out.println(" 🔥🔥🔥🔥🔥🔥🔥🔥");
     }
-    
 }

@@ -1,7 +1,6 @@
-public class PoderTelepatía implements IPower {
-    public PoderTelepatía() {
-    }
+package poderes;
 
+public class PoderTelepatía implements IPower {
     @Override
     public void dispararPoder() {
         System.out.println("🧠🧠🧠🧠🧠🧠🧠🧠");
