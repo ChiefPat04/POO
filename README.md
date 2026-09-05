@@ -6,11 +6,6 @@
 
 Repositorio académico para estudiar, practicar y aplicar los fundamentos de la **Programación Orientada a Objetos** con Java.
 
-![Java](https://img.shields.io/badge/Java-POO-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Estado](https://img.shields.io/badge/estado-en%20aprendizaje-2E7D32?style=for-the-badge)
-
-</div>
-
 ## Sobre la materia
 
 La Programación Orientada a Objetos permite representar entidades del mundo real mediante clases, atributos y comportamientos. En este repositorio se construyen pequeños programas para comprender cómo organizar el código, reutilizarlo y hacer que sus componentes colaboren de forma clara.
