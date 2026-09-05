@@ -1,16 +1,16 @@
 # Programa Mutante
 
-Programa pequeno de Java que demonstra os fundamentos da programacao orientada a objetos:
+Programa pequeño de Java que demuestra los fundamentos de la programación orientada a objetos:
 
-- heranca entre `Persona` e diferentes profissoes;
-- polimorfismo para executar comportamentos profissionais e poderes;
-- encapsulamento com atributos `private`, `protected`, metodos publicos e un contador estatico;
-- organizacao por pacotes;
-- associacao entre uma pessoa e um poder mutante.
+- herencia entre `Persona` y diferentes profesiones;
+- polimorfismo para ejecutar comportamientos profesionales y poderes;
+- encapsulamiento con atributos `private`, `protected`, métodos públicos y un contador estático;
+- organización por paquetes;
+- asociación entre una persona y un poder mutante.
 
 ## Como executar
 
-Abra uma terminal PowerShell na pasta `EJERCICIOS` e execute:
+Abre una terminal de PowerShell en la carpeta `EJERCICIOS` y ejecuta:
 
 ```powershell
 chcp 65001
@@ -21,57 +21,57 @@ javac -encoding UTF-8 -d build (Get-ChildItem -Recurse src -Filter *.java).FullN
 java '-Dfile.encoding=UTF-8' -cp build programaMutante.quickstart
 ```
 
-O programa cria dez pessoas, garante a presenca das tres profissoes e atribui os cinco poderes nas primeiras cinco posicoes. As demais combinacoes sao aleatorias. Depois, cada pessoa executa `trabajar()` e `atacar()`.
+El programa crea diez personas, garantiza la presencia de las tres profesiones y asigna los cinco poderes en las primeras cinco posiciones. Las demás combinaciones son aleatorias. Después, cada persona ejecuta `trabajar()` y `atacar()`.
 
-## Organizacao dos pacotes
+## Organización de los paquetes
 
 ```text
 src/
 ├── Personas/
-│   └── Persona.java              # Classe base
+│   └── Persona.java              # Clase base
 ├── Profesiones/
-│   ├── IAEngineer.java           # Profissao derivada
-│   ├── Mecanico.java             # Profissao derivada
-│   └── Trader.java               # Profissao derivada
+│   ├── IAEngineer.java           # Profesión derivada
+│   ├── Mecánico.java             # Profesión derivada
+│   └── Trader.java               # Profesión derivada
 ├── Poderes/
-│   ├── IPower.java               # Interface comum dos poderes
+│   ├── IPower.java               # Interfaz común de los poderes
 │   ├── PoderFuego.java
 │   ├── PoderFuerza.java
 │   ├── PoderTelepatia.java
 │   ├── PoderTormenta.java
 │   └── PoderVelocidad.java
 └── ProgramaMutante/
-    └── quickstart.java           # Ponto de entrada
+    └── quickstart.java           # Punto de entrada
 ```
 
-Os nomes reais de algumas classes possuem acentos, como `Mecánico` e `PoderTelepatía`.
+Los nombres reales de algunas clases contienen tildes, como `Mecánico` y `PoderTelepatía`.
 
 ## Classes principais
 
 ### `personas.Persona`
 
-Classe base para todas as pessoas. Mantem o nome, idade, divida e poder atribuido. Tambem fornece:
+Clase base para todas las personas. Mantiene el nombre, la edad, la deuda y el poder asignado. También proporciona:
 
-- getters e setters para os dados publicos da classe;
-- `trabajar()`, que pode ser sobrescrito pelas profissoes;
-- `setPower()` e `atacar()`, usados para o polimorfismo dos poderes;
-- `totalPersonas`, um contador estatico compartilhado por todas as instancias.
+- getters y setters para los datos públicos de la clase;
+- `trabajar()`, que puede sobrescribirse en las profesiones;
+- `setPower()` y `atacar()`, utilizados para el polimorfismo de los poderes;
+- `totalPersonas`, un contador estático compartido por todas las instancias.
 
 ### `profesiones.IAEngineer`
 
-Herda de `Persona` e representa um engenheiro de inteligencia artificial. Sobrescreve `trabajar()` e possui operacoes para desenhar IA, criar aplicacoes e treinar modelos.
+Hereda de `Persona` y representa a un ingeniero de inteligencia artificial. Sobrescribe `trabajar()` y posee operaciones para diseñar IA, crear aplicaciones y entrenar modelos.
 
 ### `profesiones.Mecánico`
 
-Herda de `Persona` e representa um mecanico. Sobrescreve `trabajar()` e possui operacoes para reparar e diagnosticar veiculos e cobrar reparacoes.
+Hereda de `Persona` y representa a un mecánico. Sobrescribe `trabajar()` y posee operaciones para reparar y diagnosticar vehículos, además de cobrar reparaciones.
 
 ### `profesiones.Trader`
 
-Herda de `Persona` e representa um trader. Sobrescreve `trabajar()` e possui operacoes para analisar o mercado, comprar ativos e vender ativos.
+Hereda de `Persona` y representa a un trader. Sobrescribe `trabajar()` y posee operaciones para analizar el mercado, comprar activos y vender activos.
 
 ### `poderes.IPower`
 
-Interface comum com o metodo `dispararPoder()`. Cada implementacao imprime uma representacao visual diferente:
+Interfaz común con el método `dispararPoder()`. Cada implementación imprime una representación visual diferente:
 
 - `PoderFuego`;
 - `PoderFuerza`;
@@ -81,11 +81,11 @@ Interface comum com o metodo `dispararPoder()`. Cada implementacao imprime uma r
 
 ### `programaMutante.quickstart`
 
-Contem o metodo `main`. Cria un arreglo de referencias `Persona`, instancia diferentes profissoes, associa poderes e chama os metodos polimorficos sem depender do tipo concreto do objeto.
+Contiene el método `main`. Crea un arreglo de referencias `Persona`, instancia diferentes profesiones, asocia poderes e invoca los métodos polimórficos sin depender del tipo concreto del objeto.
 
 ## Diagrama de classes
 
-O diagrama tambem esta disponivel em [`class-diagram.puml`](class-diagram.puml). Ele pode ser visualizado com a extensao PlantUML do VS Code.
+El diagrama también está disponible en [`class-diagram.puml`](class-diagram.puml). Puedes visualizarlo con la extensión PlantUML de VS Code.
 
 ```plantuml
 @startuml
