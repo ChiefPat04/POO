@@ -2,13 +2,13 @@
 
 Programa pequeño de Java que demuestra los fundamentos de la programación orientada a objetos:
 
-- herencia entre `Persona` y diferentes profesiones;
-- polimorfismo para ejecutar comportamientos profesionales y poderes;
-- encapsulamiento con atributos `private`, `protected`, métodos públicos y un contador estático;
-- organización por paquetes;
-- asociación entre una persona y un poder mutante.
+- Herencia entre `Persona` y diferentes profesiones.
+- Polimorfismo para ejecutar comportamientos profesionales y poderes.
+- Encapsulamiento con atributos `private`, `protected`, métodos públicos y un contador estático.
+- Organización por paquetes.
+- Asociación entre una persona y un poder mutante.
 
-## Como executar
+## Como ejecutar
 
 Abre una terminal de PowerShell en la carpeta `EJERCICIOS` y ejecuta:
 
@@ -46,7 +46,7 @@ src/
 
 Los nombres reales de algunas clases contienen tildes, como `Mecánico` y `PoderTelepatía`.
 
-## Classes principais
+## Clases principales
 
 ### `personas.Persona`
 
@@ -83,9 +83,9 @@ Interfaz común con el método `dispararPoder()`. Cada implementación imprime u
 
 Contiene el método `main`. Crea un arreglo de referencias `Persona`, instancia diferentes profesiones, asocia poderes e invoca los métodos polimórficos sin depender del tipo concreto del objeto.
 
-## Diagrama de classes
+## Diagrama de clases
 
-El diagrama también está disponible en [`class-diagram.puml`](class-diagram.puml). Puedes visualizarlo con la extensión PlantUML de VS Code.
+Diagrama en plantUML.
 
 ```plantuml
 @startuml
