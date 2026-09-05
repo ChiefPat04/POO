@@ -1,0 +1,124 @@
+@startuml
+' Diagrama de clases del programa Persona/Mutantes
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+hide empty members
+
+package "personas" {
+    class Persona {
+        - totalPersonas : int {static}
+        - edad : byte
+        # nombre : String
+        - deudasAPagar : double
+        - power : IPower
+        + Persona()
+        + Persona(edad : byte, nombre : String)
+        + Persona(nombre : String, edad : byte)
+        + Persona(nombre : String)
+        + getNombre() : String
+        + setNombre(nombre : String) : void
+        + getEdad() : byte
+        + setEdad(edad : byte) : void
+        + setPower(power : IPower) : void
+        + trabajar() : void
+        + atacar() : void
+        + getTotalPersonas() : int {static}
+    }
+}
+
+package "profesiones" {
+    class IAEngineer {
+        - especialidad : String
+        - proyectosDiseñados : int
+        - aplicacionesCreadas : int
+        - horasTrabajadas : double
+        + trabajar() : void
+        + diseñarIA(...) : void
+        + crearAplicacion(...) : void
+        + entrenarModelo() : void
+    }
+
+    class "Mecánico" as Mecanico {
+        - especialidad : String
+        - vehiculosReparados : int
+        - horasTrabajadas : double
+        - ingresos : double
+        + trabajar() : void
+        + repararVehiculo() : void
+        + diagnosticarVehiculo(...) : void
+        + cobrarReparacion(...) : boolean
+    }
+
+    class Trader {
+        - mercado : String
+        - capitalDisponible : double
+        - operacionesRealizadas : int
+        - ganancias : double
+        + trabajar() : void
+        + analizarMercado() : void
+        + comprarActivo(...) : boolean
+        + venderActivo(...) : void
+    }
+}
+
+package "poderes" {
+    interface IPower {
+        + dispararPoder() : void
+    }
+
+    class PoderFuego {
+        + dispararPoder() : void
+    }
+
+    class PoderFuerza {
+        + dispararPoder() : void
+    }
+
+    class "PoderTelepatía" as PoderTelepatia {
+        + dispararPoder() : void
+    }
+
+    class PoderTormenta {
+        + dispararPoder() : void
+    }
+
+    class PoderVelocidad {
+        + dispararPoder() : void
+    }
+}
+
+package "programaMutante" {
+    class quickstart {
+        + main(args : String[]) : void
+    }
+}
+
+' Herencia de profesiones
+Persona <|-- IAEngineer
+Persona <|-- Mecanico
+Persona <|-- Trader
+
+' Implementación polimórfica de poderes
+IPower <|.. PoderFuego
+IPower <|.. PoderFuerza
+IPower <|.. PoderTelepatia
+IPower <|.. PoderTormenta
+IPower <|.. PoderVelocidad
+
+' Persona conserva una referencia al comportamiento de poder
+Persona "1" o-- "0..1" IPower : power
+
+' quickstart crea y utiliza personas y poderes
+quickstart ..> Persona : crea arreglo
+quickstart ..> IAEngineer : instancia
+quickstart ..> Mecanico : instancia
+quickstart ..> Trader : instancia
+quickstart ..> IPower : asigna poderes
+quickstart ..> PoderFuego : crea
+quickstart ..> PoderFuerza : crea
+quickstart ..> PoderTelepatia : crea
+quickstart ..> PoderTormenta : crea
+quickstart ..> PoderVelocidad : crea
+
+@enduml
