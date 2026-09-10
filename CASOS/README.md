@@ -1,8 +1,12 @@
 # Juego de Batalla de Mutantes
 
-**Curso:** Programación Orientada a Objetos 
-**Instituto Tecnológico de Costa Rica**
+**Curso:** Programación Orientada a Objetos  
+**Instituto Tecnológico de Costa Rica**  
 **Fecha de entrega final:** viernes 25 de septiembre
+
+**Autores:**  
+Elian Montero  
+Patrick Zúñiga
 
 ---
 
@@ -266,7 +270,7 @@ enemigos por parte de otros hilos.
 
 **4.3 Momento en que se decide atacar o defender**
 La decisión de atacar o defender **no** es libre ni continua: solo ocurre
-quando el movimiento de un mutante lo coloca dentro del radio de detección
+cuando el movimiento de un mutante lo coloca dentro del radio de detección
 de un enemigo (o viceversa). Debe garantizarse que cada par de mutantes
 que se cruza genere un único encuentro, incluso si ambos hilos detectan el
 cruce al mismo tiempo.
