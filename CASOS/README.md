@@ -3,6 +3,7 @@
 **Curso:** Programación Orientada a Objetos  
 **Instituto Tecnológico de Costa Rica**  
 **Fecha de entrega final:** viernes 25 de septiembre
+Patrick Zúñiga y Elian Montero 
 
 **Autores:**  
 Elian Montero  
