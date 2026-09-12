@@ -1,4 +1,4 @@
-# Juego de Batalla de Mutantes 🎮⚔️
+# Juego de Batalla de Mutantes 
 
 **Curso:** Programación Orientada a Objetos  
 **Instituto Tecnológico de Costa Rica**  
