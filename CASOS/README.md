@@ -248,3 +248,8 @@ HiloMutante ..> GestorCombate
 GestorCombate ..> Mutante
 
 ObservadorBatalla <|.. PanelCampoBatalla
+ObservadorBatalla <|.. PanelMarcador
+VentanaBatalla *-- PanelCampoBatalla
+VentanaBatalla *-- PanelMarcador
+@enduml
+```java
