@@ -39,5 +39,4 @@ Consulta la documentación detallada en el [README del ejercicio](EJERCICIOS/REA
 ## Autor
 
 **Patrick Zúñiga Arroyo**
-
 Repositorio general para la materia de Programación Orientada a Objetos.

@@ -1,6 +1,6 @@
-package Mutantes.model;
+package mutantes.model;
 
-import Mutantes.constants.ConstantesJuego;
+import mutantes.constants.ConstantesJuego;
 
 public class Mutante {
 
