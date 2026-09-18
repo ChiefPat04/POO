@@ -1,24 +1,18 @@
-# Juego de Batalla de Mutantes
+# Juego de Batalla de Mutantes 
 
 **Curso:** Programación Orientada a Objetos  
 **Instituto Tecnológico de Costa Rica**  
-**Fecha de entrega final:** viernes 25 de septiembre
-Patrick Zúñiga y Elian Montero 
+**Fecha de entrega final:** viernes 25 de septiembre  
 
 **Autores:**  
 Elian Montero  
-Patrick Zúñiga
+Patrick Zúñiga  
 
 ---
 
 ## 1. Descripción general
 
-El sistema implementa un juego automático de batalla de mutantes. El único
-dato que ingresa el usuario es el tamaño de los equipos (un valor entre 3 y
-11, igual para ambos). A partir de ahí, el sistema genera mutantes
-aleatorios para dos equipos y ejecuta la batalla de forma completamente
-automática, sin intervención adicional del usuario, hasta que uno de los
-dos equipos pierde a todos sus mutantes.
+El sistema implementa un juego automático de batalla de mutantes. El único dato que ingresa el usuario es el tamaño de los equipos (un valor entre 3 y 11, igual para ambos). A partir de ahí, el sistema genera mutantes aleatorios para dos equipos y ejecuta la batalla de forma completamente automática, sin intervención adicional del usuario, hasta que uno de los dos equipos pierde a todos sus mutantes.
 
 El proyecto se organiza en cuatro capas con responsabilidades separadas:
 
@@ -37,40 +31,33 @@ El proyecto se organiza en cuatro capas con responsabilidades separadas:
 
 **Clase `Mutante`**
 
-| Atributo | Tipo | Descripción |
-|---|---|---|
-| `nombre` | `String` | Identificador del mutante |
-| `energia` | `int` | Energía actual, inicia en `100` |
-| `defensa` | `int` | Capacidad de defensa, entre `1` y `3` |
-| `poder` | `PoderMutante` | El poder que porta el mutante (a lo sumo uno) |
-| `posicionX`, `posicionY` | `int` | Posición actual en el campo |
-| `radioDeteccion` | `int` | Radio dentro del cual detecta enemigos |
-| `vivo` | `boolean` | Estado de vida |
+* `- id: int` (Identificador único del mutante)
+* `- nombre: String` (Nombre o identificador)
+* `- energia: int` (Energía actual, inicia en `100`)
+* `- defensa: int` (Capacidad de defensa, entre `1` y `3`)
+* `- poder: PoderMutante` (El poder que porta el mutante)
+* `- posicionX: int`, `- posicionY: int` (Posición actual en el campo)
+* `- limiteX: int`, `- limiteY: int` (Límites del campo de batalla)
+* `- radioDeteccion: int` (Radio dentro del cual detecta enemigos)
+* `- vivo: boolean` (Estado de vida)
 
-Métodos principales: `recibirDano(int cantidad)`, `defender()`,
-`atacar(Mutante objetivo)`, `estaVivo(): boolean`,
-`moverse(int limiteX, int limiteY)`.
+*Métodos principales:* `recibirDano(int cantidad)`, `defender()`, `atacar(Mutante objetivo)`, `estaVivo(): boolean`, `moverse()`.
 
 **Clase abstracta `PoderMutante`**
 
-| Atributo | Tipo | Descripción |
-|---|---|---|
-| `nombre` | `String` | Nombre del poder |
-| `dano` | `int` | Daño base, entre `1` y `3`, sube hasta un máximo de `7` |
+* `- nombre: String` (Nombre del poder)
+* `- dano: int` (Daño base, entre `1` y `3`, sube hasta un máximo de `7`)
+* `- colorEfecto: java.awt.Color` (Color o identificador gráfico del ataque para la UI)
 
-Método abstracto: `aplicarEfecto(Mutante origen, Mutante objetivo)`.
+*Métodos principales:* `abstract aplicarEfecto(Mutante objetivo)`, `aumentarDano()`, `getColorEfecto()`.
 
-Cada mutante puede portar un poder distinto. Para que esto tenga un uso real
-de herencia y polimorfismo (no solo un cambio de nombre), `PoderMutante` es
-abstracta y se definen subclases concretas, por ejemplo:
+Para cumplir con el uso de herencia y polimorfismo, `PoderMutante` es abstracta y se definen subclases concretas:
 
 - `PoderFuerza`: aumenta el daño directo de ataque.
-- `PoderVelocidad`: puede afectar la frecuencia de movimiento o el radio de
-  detección efectivo.
-- `PoderRegeneracion`: recupera parte de la energía propia con cada golpe
-  exitoso.
+- `PoderVelocidad`: afecta la frecuencia de movimiento o el radio de detección.
+- `PoderRegeneracion`: recupera parte de la energía propia con cada golpe exitoso.
 
-Cada subclase sobrescribe `aplicarEfecto(...)` con su propio comportamiento.
+Cada subclase sobrescribe `aplicarEfecto(objetivo)` con su propio comportamiento y define su propio `colorEfecto` para la diferenciación visual en la UI.
 
 ---
 
@@ -78,155 +65,174 @@ Cada subclase sobrescribe `aplicarEfecto(...)` con su propio comportamiento.
 
 **Clase `Equipo`**
 
-| Atributo | Tipo | Descripción |
-|---|---|---|
-| `color` | `String` | Color identificador del equipo |
-| `simbolo` | `String` | Escudo o símbolo del equipo |
-| `mutantes` | `List<Mutante>` | Mutantes del equipo |
-| `vivos`, `muertos` | `int` | Marcador del equipo |
+* `- color: java.awt.Color` (Color identificador del equipo)
+* `- simbolo: java.awt.image.BufferedImage` (Escudo o símbolo del equipo)
+* `- mutantes: List<Mutante>` (Mutantes del equipo)
+* `- vivos: int`, `- muertos: int` (Marcador del equipo)
 
-Métodos: `agregarMutante(Mutante m)`, `actualizarMarcador()`,
-`estaDerrotado(): boolean`.
+*Métodos principales:* `agregarMutante(Mutante m)`, `actualizarMarcador()`, `estaDerrotado(): boolean`.
 
 **Clase `CampoDeBatalla`**
 
-| Atributo | Tipo | Descripción |
-|---|---|---|
-| `ancho`, `alto` | `int` | Dimensiones del campo |
-| `equipoA`, `equipoB` | `Equipo` | Los dos equipos en juego |
-| `radioDeteccionDefault` | `int` | Valor por defecto del radio de detección |
+* `- ancho: int`, `- alto: int` (Dimensiones del campo)
+* `- equipoA: Equipo`, `- equipoB: Equipo` (Los dos equipos en juego)
+* `- radioDeteccionDefault: int` (Valor por defecto del radio de detección)
 
-Métodos: `crearEquipos(int tamano)`, `getDimensiones(): int[]`,
-`hayGanador(): boolean`, `getGanador(): Equipo`.
+*Métodos principales:* `crearEquipos(int tamano)`, `getDimensiones(): int[]`, `hayGanador(): boolean`, `getGanador(): Equipo`.
 
 ---
 
 ### 2.3 Capa Control (`control`)
 
-**Clase `HiloMutante`** (implementa `Runnable`)
+**Clase `HiloMutante` (implementa `Runnable`)**
 
-Responsable de mover un mutante repetidamente y detectar cuándo entra en el
-radio de un enemigo. Métodos: `run()`,
-`detectarEnemigosEnRadio(): List<Mutante>`.
+* `- mutante: Mutante`
+* `- campo: CampoDeBatalla`
+* `- gestor: GestorCombate`
+
+*Métodos principales:* `run()`, `detectarEnemigosEnRadio(): List<Mutante>`.
 
 **Clase `GestorCombate`**
 
-Responsable de aplicar la fórmula de daño y de garantizar que cada
-encuentro entre dos mutantes se resuelva una sola vez, incluso si ambos
-hilos lo detectan al mismo tiempo. Método principal:
-`resolverEncuentro(Mutante atacante, Mutante defensor)`.
+* `- campo: CampoDeBatalla`
+* `- paresEnContacto: Set<String>`
+
+*Método principal:* `resolverEncuentro(Mutante atacante, Mutante defensor)`.
 
 ---
 
 ### 2.4 Capa UI (`ui`)
 
-**Interfaz `ObservadorBatalla`**
+**Interfaz `ObservadorBatalla`** (o `java.util.Observer`)
+* `alActualizarEstado()`
 
-Método: `alActualizarEstado()`.
+**Clase `VentanaBatalla` (extiende `JFrame`)**
+Contenedor principal de la aplicación; incluye la configuración de equipos y el botón de nueva partida.
 
-**Clase `VentanaBatalla`** (extiende `JFrame`)
-Contenedor principal de la aplicación; incluye el botón de nueva partida.
+**Clase `PanelCampoBatalla` (extiende `JPanel`, implementa `ObservadorBatalla`)**
+Dibuja el campo y los mutantes vivos, coloreados según su equipo y resaltando el efecto visual según `colorEfecto`.
 
-**Clase `PanelCampoBatalla`** (extiende `JPanel`, implementa `ObservadorBatalla`)
-Dibuja el campo y los mutantes vivos, coloreados según su equipo.
-
-**Clase `PanelMarcador`** (extiende `JPanel`, implementa `ObservadorBatalla`)
+**Clase `PanelMarcador` (extiende `JPanel`, implementa `ObservadorBatalla`)**
 Muestra energía, vivos/muertos por equipo y anuncia al ganador.
-
-La UI **nunca** calcula lógica de juego: solo consulta el estado del
-Modelo y reacciona a las notificaciones (patrón Observer) para repintarse.
 
 ---
 
 ### 2.5 Constantes (`constants`)
 
-Clase `ConstantesJuego` con, entre otros:
+**Interfaz `IConstants`**
 
-```
-ENERGIA_INICIAL      = 100
-DEFENSA_MIN          = 1
-DEFENSA_MAX          = 3
-DANO_MIN             = 1
-DANO_MAX             = 3
-DANO_MAX_PODER       = 7
-TAMANO_EQUIPO_MIN    = 3
-TAMANO_EQUIPO_MAX    = 11
-RADIO_DETECCION_DEFAULT
-REFRESH_RATE_MS
-```
 
----
+public interface IConstants {
+    int ENERGIA_INICIAL = 100;
+    int DEFENSA_MIN = 1;
+    int DEFENSA_MAX = 3;
+    int DANO_MIN = 1;
+    int DANO_MAX = 3;
+    int DANO_MAX_PODER = 7;
+    int TAMANO_EQUIPO_MIN = 3;
+    int TAMANO_EQUIPO_MAX = 11;
+    int RADIO_DETECCION_DEFAULT = 40;
+    int REFRESH_RATE_MS = 33;
+}
 
-## 3. Diagrama UML (PlantUML)
 
-```plantuml
+## 3 Diagrama UML (PlantUML)
 @startuml
-abstract class PoderMutante {
-  -nombre: String
-  -dano: int
-  +aplicarEfecto(origen: Mutante, objetivo: Mutante)
-  +aumentarDano()
+skinparam classAttributeIconSize 0
+
+package constants {
+  interface IConstants
 }
 
-class PoderFuerza extends PoderMutante
-class PoderVelocidad extends PoderMutante
-class PoderRegeneracion extends PoderMutante
+package model {
+  enum AccionCombate {
+    ATACAR
+    DEFENDER
+  }
 
-class Mutante {
-  -nombre: String
-  -energia: int
-  -defensa: int
-  -poder: PoderMutante
-  -posicionX: int
-  -posicionY: int
-  -radioDeteccion: int
-  -vivo: boolean
-  +recibirDano(cantidad: int)
-  +defender()
-  +atacar(objetivo: Mutante)
-  +estaVivo(): boolean
-  +moverse(limiteX: int, limiteY: int)
+  abstract class PoderMutante {
+    -nombre: String
+    -dano: int
+    -colorEfecto: java.awt.Color
+    +aplicarEfecto(objetivo: Mutante)
+    +aumentarDano()
+    +getColorEfecto(): java.awt.Color
+  }
+
+  class PoderFuerza extends PoderMutante
+  class PoderVelocidad extends PoderMutante
+  class PoderRegeneracion extends PoderMutante
+
+  class Mutante {
+    -id: int
+    -nombre: String
+    -energia: int
+    -defensa: int
+    -poder: PoderMutante
+    -posicionX: int
+    -posicionY: int
+    -limiteX: int
+    -limiteY: int
+    -radioDeteccion: int
+    -vivo: boolean
+    +recibirDano(cantidad: int)
+    +defender(): int
+    +atacar(objetivo: Mutante)
+    +estaVivo(): boolean
+    +moverse()
+  }
 }
 
-class Equipo {
-  -color: String
-  -simbolo: String
-  -mutantes: List<Mutante>
-  -vivos: int
-  -muertos: int
-  +agregarMutante(m: Mutante)
-  +actualizarMarcador()
-  +estaDerrotado(): boolean
+package game {
+  class Equipo {
+    -color: java.awt.Color
+    -simbolo: java.awt.image.BufferedImage
+    -mutantes: List<Mutante>
+    -vivos: int
+    -muertos: int
+    +agregarMutante(m: Mutante)
+    +actualizarMarcador()
+    +estaDerrotado(): boolean
+  }
+
+  class CampoDeBatalla {
+    -ancho: int
+    -alto: int
+    -equipoA: Equipo
+    -equipoB: Equipo
+    -radioDeteccionDefault: int
+    +crearEquipos(tamano: int)
+    +getDimensiones(): int[]
+    +hayGanador(): boolean
+    +getGanador(): Equipo
+  }
 }
 
-class CampoDeBatalla {
-  -ancho: int
-  -alto: int
-  -equipoA: Equipo
-  -equipoB: Equipo
-  -radioDeteccionDefault: int
-  +crearEquipos(tamano: int)
-  +getDimensiones(): int[]
-  +hayGanador(): boolean
-  +getGanador(): Equipo
+package control {
+  class HiloMutante {
+    -mutante: Mutante
+    -campo: CampoDeBatalla
+    -gestor: GestorCombate
+    +run()
+    +detectarEnemigosEnRadio(): List<Mutante>
+  }
+
+  class GestorCombate {
+    -campo: CampoDeBatalla
+    -paresEnContacto: Set<String>
+    +resolverEncuentro(atacante: Mutante, defensor: Mutante)
+  }
 }
 
-class HiloMutante {
-  +run()
-  +detectarEnemigosEnRadio(): List<Mutante>
-}
+package ui {
+  interface ObservadorBatalla {
+    +alActualizarEstado()
+  }
 
-class GestorCombate {
-  +resolverEncuentro(atacante: Mutante, defensor: Mutante)
+  class VentanaBatalla
+  class PanelCampoBatalla
+  class PanelMarcador
 }
-
-interface ObservadorBatalla {
-  +alActualizarEstado()
-}
-
-class VentanaBatalla
-class PanelCampoBatalla
-class PanelMarcador
 
 PoderMutante <|-- PoderFuerza
 PoderMutante <|-- PoderVelocidad
@@ -236,77 +242,9 @@ Mutante "1" *-- "0..1" PoderMutante
 Equipo "1" *-- "3..11" Mutante
 CampoDeBatalla "1" *-- "2" Equipo
 
-HiloMutante ..> Mutante : usa
-HiloMutante ..> CampoDeBatalla : usa
-GestorCombate ..> Mutante : usa
+HiloMutante ..> Mutante
+HiloMutante ..> CampoDeBatalla
+HiloMutante ..> GestorCombate
+GestorCombate ..> Mutante
 
 ObservadorBatalla <|.. PanelCampoBatalla
-ObservadorBatalla <|.. PanelMarcador
-VentanaBatalla *-- PanelCampoBatalla
-VentanaBatalla *-- PanelMarcador
-@enduml
-```
-
-*(Pegar aquí también la imagen renderizada del diagrama una vez generada
-con la extensión de PlantUML.)*
-
----
-
-## 4. Decisiones de diseño
-
-Estas son decisiones ya tomadas para el diseño, junto con su justificación:
-
-**4.1 Posición inicial de los mutantes**
-Cada mutante nace dentro de una "zona base" asignada a su equipo (por
-ejemplo, equipo A en el extremo izquierdo del campo, equipo B en el
-extremo derecho), en vez de un spawn completamente aleatorio en todo el
-campo. Esto da un punto de partida más realista y evita combates
-instantáneos apenas arranca la partida, dependiendo del tamaño que se
-defina para cada zona base.
-
-**4.2 Condición de muerte**
-Un mutante muere cuando su energía llega a `0`. A partir de ese momento no
-puede atacar ni defender, y debe quedar excluido de cualquier detección de
-enemigos por parte de otros hilos.
-
-**4.3 Momento en que se decide atacar o defender**
-La decisión de atacar o defender **no** es libre ni continua: solo ocurre
-cuando el movimiento de un mutante lo coloca dentro del radio de detección
-de un enemigo (o viceversa). Debe garantizarse que cada par de mutantes
-que se cruza genere un único encuentro, incluso si ambos hilos detectan el
-cruce al mismo tiempo.
-
-**4.4 Radio de detección**
-Por ahora es un valor único, igual para todos los mutantes
-(`RADIO_DETECCION_DEFAULT`), pero se implementa como un atributo de
-instancia en `Mutante` (no como una constante usada directamente en los
-cálculos), de modo que en una futura iteración un poder específico pueda
-modificar el radio de un mutante en particular sin tener que rediseñar la
-lógica de detección.
-
-**4.5 Poderes distintos por mutante**
-`PoderMutante` se define como clase abstracta con subclases concretas
-(`PoderFuerza`, `PoderVelocidad`, `PoderRegeneracion`, ...), cada una con su
-propia implementación de `aplicarEfecto(...)`, para cumplir con el uso real
-de herencia y polimorfismo pedido en el enunciado.
-
-**4.6 Esquema de concurrencia (pendiente de definir)**
-Se evalúan dos enfoques para el movimiento paralelo de los mutantes:
-- Un `Thread` por mutante: más directo de implementar y de explicar.
-- Un `ExecutorService` con un pool de hilos fijo: más eficiente en
-  recursos y con apagado más ordenado, pero conceptualmente menos directo.
-
-Se plantea iniciar con un `Thread` por mutante para validar la lógica de
-movimiento y combate, y evaluar migrar a `ExecutorService` una vez que esa
-lógica esté estable.
-
----
-
-## 5. Preguntas abiertas para discutir con el profesor
-
-- Tamaño recomendado para la "zona base" de cada equipo.
-- Si el número de subclases de `PoderMutante` propuesto (3) es suficiente
-  para demostrar el uso de herencia/polimorfismo que pide la rúbrica.
-- Validación del enfoque de concurrencia (hilo por mutante vs. pool).
-- Mecanismo propuesto para evitar combates duplicados cuando dos mutantes
-  se detectan mutuamente en el mismo instante.
