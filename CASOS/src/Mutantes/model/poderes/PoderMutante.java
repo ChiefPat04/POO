@@ -11,6 +11,20 @@ public abstract class PoderMutante {
         this.dano = danoInicial;
     }
 
+    public final void aplicarEfecto(Mutante atacante, Mutante objetivo){
+        int energiaAntes = objetivo.getEnergia();
+
+        efectoEspecifico(atacante, objetivo);
+
+        if (objetivo.getEnergia() < energiaAntes) {
+            aumentarDano();
+        }
+    }
+
+    protected abstract void efectoEspecifico(Mutante atacante, Mutante objetivo);
+
+    public abstract TipoEfecto getTipoEfecto();
+
     public synchronized void aumentarDano() {
         if (dano < ConstantesJuego.DANO_MAX_PODER) {
             dano++;
@@ -20,8 +34,4 @@ public abstract class PoderMutante {
     public synchronized int getDano() {
         return dano;
     }
-
-    public abstract TipoEfecto getTipoEfecto();
-
-    public abstract void aplicarEfecto(Mutante objetivo);
 }

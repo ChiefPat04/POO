@@ -14,7 +14,12 @@ public class PoderRegeneracion extends PoderMutante {
     }
 
     @Override
-    public void aplicarEfecto(Mutante objetivo) {
-        objetivo.recibirDano(getDano() / 2);
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo) {
+        objetivo.recibirDano(getDano());
+        atacante.curar(getDano()/2);
     }
 }
+
+//Ahora sí cumple su nombre: le hace daño normal al enemigo (getDano(), igual que los otros) y además cura a su propio dueño la mitad de ese valor. 
+// Esto es una diferencia de comportamiento real, no solo un número distinto — ahora si alguien pregunta "¿por qué existen 3 subclases y no 1 sola con un parámetro?", 
+// la respuesta es clara: porque cada una hace algo cualitativamente distinto, y eso es exactamente lo que el polimorfismo está para resolver.
