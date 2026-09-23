@@ -14,7 +14,7 @@ public class PoderFuerza extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
-        objetivo.recibirDano(getDano());
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+        objetivo.recibirDano(danoConDefensa(objetivo, objetivoSeDefiende));
     }
 }

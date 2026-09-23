@@ -14,7 +14,7 @@ public class PoderTeletransportacion extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
         // Vacio a proposito: mover al mutante requiere conocer las
         // dimensiones del CampoDeBatalla, que pertenece a la capa Game.
         // La capa Control sera quien dispare el movimiento real.

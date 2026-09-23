@@ -1,5 +1,6 @@
 package mutantes.model;
 
+import java.util.concurrent.ThreadLocalRandom;
 import mutantes.constants.ConstantesJuego;
 import mutantes.model.poderes.PoderMutante;
 
@@ -68,12 +69,21 @@ public class Mutante {
         invisible = true;
     }
 
+    public AccionCombate decidirAccion() {
+        boolean ataca = ThreadLocalRandom.current().nextBoolean();
+        return ataca ? AccionCombate.ATACAR : AccionCombate.DEFENDER;
+    }
+
     public synchronized void atacar(Mutante objetivo) {
+        atacar(objetivo, false);
+    }
+
+    public synchronized void atacar(Mutante objetivo, boolean objetivoSeDefiende) {
         if (!vivo || poder == null) {
             return;
         }
 
-        poder.aplicarEfecto(this, objetivo);
+        poder.aplicarEfecto(this, objetivo, objetivoSeDefiende);
     }
 
     public synchronized boolean estaVivo() {

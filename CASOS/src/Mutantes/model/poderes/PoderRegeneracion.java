@@ -14,8 +14,8 @@ public class PoderRegeneracion extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
-        poseedor.recuperarEnergia(getDano());
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+        atacante.recuperarEnergia(getDano());
     }
 }
 

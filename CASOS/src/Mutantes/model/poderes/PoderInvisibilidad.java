@@ -14,7 +14,7 @@ public class PoderInvisibilidad extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
-        poseedor.activarInvisibilidad();
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+        atacante.activarInvisibilidad();
     }
 }

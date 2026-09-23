@@ -14,8 +14,12 @@ public class PoderRoboEnergia extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
-        objetivo.recibirDano(getDano());
-        poseedor.recuperarEnergia(getDano() / 2);
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+        int danoFinal = danoConDefensa(objetivo, objetivoSeDefiende);
+        objetivo.recibirDano(danoFinal);
+        atacante.recuperarEnergia(getDano() / 2);
     }
 }
+
+//le corregí el parámetro poseedor a atacante para que coincida con el nombre que usa PoderMutante en la firma del método abstracto 
+//mismo objeto, solo homogenizamos el nombre entre todas las subclases para que sea consistente leerlas.

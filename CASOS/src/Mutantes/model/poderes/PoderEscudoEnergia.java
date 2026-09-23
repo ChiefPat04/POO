@@ -14,7 +14,7 @@ public class PoderEscudoEnergia extends PoderMutante {
     }
 
     @Override
-    protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
-        poseedor.activarEscudo();
+    protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+        atacante.activarEscudo();
     }
 }

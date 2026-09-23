@@ -55,11 +55,11 @@ public class Equipo {
         return simbolo;
     }
 
-    public int getVivos() {
+    public synchronized int getVivos() {
         return vivos;
     }
 
-    public int getMuertos() {
+    public synchronized int getMuertos() {
         return muertos;
     }
 }
