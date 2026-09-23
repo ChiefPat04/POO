@@ -42,14 +42,30 @@ public class CampoDeBatalla {
         int idActual = 1;
 
         for (int i = 0; i < tamano; i++){
-            equipoA.agregarMutante(generarMutanteAleatorio(idActual));
+            Mutante mutante = generarMutanteAleatorio(idActual);
+            ubicarEnZonaBase(mutante, true);
+            equipoA.agregarMutante(mutante);
             idActual++;
         }
 
         for (int i = 0; i < tamano; i++){
-            equipoB.agregarMutante(generarMutanteAleatorio(idActual));
+            Mutante mutante = generarMutanteAleatorio(idActual);
+            ubicarEnZonaBase(mutante, false);
+            equipoB.agregarMutante(mutante);
             idActual++;
         }
+    }
+
+    private void ubicarEnZonaBase(Mutante mutante, boolean esEquipoA) {
+        int x;
+        if (esEquipoA) {
+            x = valorAleatorioEntre(0, ConstantesJuego.ANCHO_ZONA_BASE);
+        } else {
+            x = valorAleatorioEntre(ancho - ConstantesJuego.ANCHO_ZONA_BASE, ancho);
+        }
+
+        int y = valorAleatorioEntre(0, alto);
+        mutante.reposicionar(x, y);
     }
 
     private Mutante generarMutanteAleatorio(int id) {
@@ -94,6 +110,13 @@ public class CampoDeBatalla {
 
     public int getRadioDeteccion() {
         return radioDeteccion;
+    }
+
+    public Equipo getEquipoEnemigoDe(Mutante mutante) {
+        if (equipoA.getMutantes().contains(mutante)) {
+            return equipoB;
+        }
+        return equipoA;
     }
 
     public boolean hayGanador(){

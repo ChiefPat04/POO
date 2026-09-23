@@ -15,6 +15,11 @@ public class Mutante {
     private boolean escudoActivo;
     private boolean invisible;
 
+    private int posicionX;
+    private int posicionY;
+    private int velocidadX;
+    private int velocidadY;
+
     public Mutante(int id, String nombre, int defensa, PoderMutante poder) {
         this.id = id;
         this.nombre = nombre;
@@ -24,6 +29,47 @@ public class Mutante {
         this.vivo = true;
         this.escudoActivo = false;
         this.invisible = false;
+
+        this.posicionX = 0;
+        this.posicionY = 0;
+        this.velocidadX = signoAleatorio() * ConstantesJuego.VELOCIDAD_MUTANTE;
+        this.velocidadY = signoAleatorio() * ConstantesJuego.VELOCIDAD_MUTANTE;
+    }
+
+    private int signoAleatorio() {
+        return ThreadLocalRandom.current().nextBoolean() ? 1 : -1; 
+    }
+
+    public synchronized void moverse (int limiteX, int limiteY) {
+        if (!vivo) {
+            return;
+        }
+
+        posicionX += velocidadX;
+        posicionY += velocidadY;
+
+        if (posicionX < 0 || posicionX > limiteX) {
+            velocidadX = -velocidadX;
+            posicionX = Math.max(0, Math.min(posicionX, limiteX));
+        }
+
+        if (posicionY < 0 || posicionY > limiteY) {
+            velocidadY = -velocidadY;
+            posicionY = Math.max(0, Math.min(posicionY, limiteY));
+        }
+    }
+
+    public synchronized void reposicionar(int nuevaX, int nuevaY){
+        this.posicionX = nuevaX;
+        this.posicionY = nuevaY;
+    }
+
+    public synchronized int getPosicionX() {
+        return posicionX;
+    }
+
+    public synchronized int getPosicionY() {
+        return posicionY;
     }
 
     public synchronized void recibirDano(int cantidad) {
