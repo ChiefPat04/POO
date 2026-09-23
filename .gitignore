@@ -1,5 +1,7 @@
-
 # Java build artifacts
 out/
+bin/
 *.class
 
+# VS Code
+.vscode/

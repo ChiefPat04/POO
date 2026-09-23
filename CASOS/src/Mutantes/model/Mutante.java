@@ -11,6 +11,8 @@ public class Mutante {
     private final int defensa;
     private final PoderMutante poder;
     private boolean vivo;
+    private boolean escudoActivo;
+    private boolean invisible;
 
     public Mutante(int id, String nombre, int defensa, PoderMutante poder) {
         this.id = id;
@@ -19,6 +21,8 @@ public class Mutante {
         this.poder = poder;
         this.energia = ConstantesJuego.ENERGIA_INICIAL;
         this.vivo = true;
+        this.escudoActivo = false;
+        this.invisible = false;
     }
 
     public synchronized void recibirDano(int cantidad) {
@@ -26,7 +30,18 @@ public class Mutante {
             return;
         }
 
-        energia -= cantidad;
+        if (invisible) {
+            invisible = false;
+            return;
+        }
+
+        int danoFinal = cantidad;
+        if (escudoActivo) {
+            danoFinal = cantidad / 2;
+            escudoActivo = false;
+        }
+
+        energia -= danoFinal;
 
         if (energia <= 0) {
             energia = 0;
@@ -34,15 +49,30 @@ public class Mutante {
         }
     }
 
-    public synchronized void curar(int cantidad) {
+    public synchronized void recuperarEnergia(int cantidad) {
         if (!vivo) {
             return;
         }
 
         energia += cantidad;
+        if (energia > ConstantesJuego.ENERGIA_INICIAL) {
+            energia = ConstantesJuego.ENERGIA_INICIAL;
+        }
     }
 
-    public void atacar(Mutante objetivo){
+    public synchronized void activarEscudo() {
+        escudoActivo = true;
+    }
+
+    public synchronized void activarInvisibilidad() {
+        invisible = true;
+    }
+
+    public synchronized void atacar(Mutante objetivo) {
+        if (!vivo || poder == null) {
+            return;
+        }
+
         poder.aplicarEfecto(this, objetivo);
     }
 

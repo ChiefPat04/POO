@@ -2,19 +2,20 @@ package mutantes.model.poderes;
 
 import mutantes.model.Mutante;
 
-public class PoderFuerza extends PoderMutante {
+public class PoderRoboEnergia extends PoderMutante {
 
-    public PoderFuerza(int danoInicial) {
+    public PoderRoboEnergia(int danoInicial) {
         super(danoInicial);
     }
 
     @Override
     public TipoEfecto getTipoEfecto() {
-        return TipoEfecto.FUEGO;
+        return TipoEfecto.ROBO_ENERGIA;
     }
 
     @Override
     protected void efectoEspecifico(Mutante poseedor, Mutante objetivo) {
         objetivo.recibirDano(getDano());
+        poseedor.recuperarEnergia(getDano() / 2);
     }
 }

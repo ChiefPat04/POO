@@ -3,5 +3,9 @@ package mutantes.model.poderes;
 public enum TipoEfecto {
     FUEGO,
     RAYO,
-    REGENERACION
+    REGENERACION,
+    ESCUDO_ENERGIA,
+    INVISIBILIDAD,
+    ROBO_ENERGIA,
+    TELETRANSPORTACION
 }
