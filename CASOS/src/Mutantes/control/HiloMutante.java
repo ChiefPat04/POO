@@ -1,7 +1,10 @@
 package mutantes.control;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import mutantes.constants.ConstantesJuego;
 import mutantes.game.CampoDeBatalla;
 import mutantes.game.Equipo;
@@ -12,6 +15,7 @@ public class HiloMutante implements Runnable {
     private final Mutante mutante;
     private final CampoDeBatalla campo;
     private final GestorCombate gestor;
+    private final Set<Integer> enemigosEnContacto = new HashSet<>();
 
     public HiloMutante(Mutante mutante, CampoDeBatalla campo, GestorCombate gestor) {
         this.mutante = mutante;
@@ -31,26 +35,29 @@ public class HiloMutante implements Runnable {
     }
 
     private void resolverEncuentrosCercanos() {
-        for (Mutante enemigo : detectarEnemigosEnRadio()) {
-            if (enemigo.estaVivo()) {
+        Equipo equipoEnemigo = campo.getEquipoEnemigoDe(mutante);
+        int radio = campo.getRadioDeteccion();
+        Set<Integer> enemigosAhoraEnRadio = new HashSet<>();
+
+        for (Mutante enemigo : equipoEnemigo.getMutantes()) {
+            if (!enemigo.estaVivo()) {
+                continue;
+            }
+
+            if (!dentroDelRadio(enemigo, radio)) {
+                continue;
+            }
+
+            enemigosAhoraEnRadio.add(enemigo.getId());
+
+            boolean esEncuentroNuevo = !enemigosEnContacto.contains(enemigo.getId());
+            if (esEncuentroNuevo) {
                 gestor.resolverEncuentro(mutante, enemigo);
             }
         }
-    }
 
-    private List<Mutante> detectarEnemigosEnRadio() {
-        Equipo equipoEnemigo = campo.getEquipoEnemigoDe(mutante);
-        int radio = campo.getRadioDeteccion();
-
-        List<Mutante> enEsteRadio = new ArrayList<>();
-
-        for (Mutante enemigo : equipoEnemigo.getMutantes()) {
-            if (enemigo.estaVivo() && dentroDelRadio(enemigo, radio)) {
-                enEsteRadio.add(enemigo);
-            }
-        }
-
-        return enEsteRadio;
+        enemigosEnContacto.clear();
+        enemigosEnContacto.addAll(enemigosAhoraEnRadio);
     }
 
     private boolean dentroDelRadio(Mutante enemigo, int radio) {

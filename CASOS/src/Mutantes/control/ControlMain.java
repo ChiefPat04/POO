@@ -41,13 +41,15 @@ public class ControlMain {
         pool.shutdownNow();
         pool.awaitTermination(2, TimeUnit.SECONDS);
 
+        boolean hayGanador = campo.hayGanador();
+
         System.out.println();
         System.out.println("--- Estado final ---");
         imprimirEquipo("Equipo A", campo.getEquipoA());
         imprimirEquipo("Equipo B", campo.getEquipoB());
 
-        System.out.println("Hay ganador: " + campo.hayGanador());
-        if (campo.hayGanador() && campo.getGanador() != null) {
+        System.out.println("Hay ganador: " + hayGanador);
+        if (hayGanador && campo.getGanador() != null) {
             System.out.println("Gano el equipo: " + campo.getGanador().getColor());
         }
     }
