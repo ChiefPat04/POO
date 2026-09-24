@@ -12,7 +12,7 @@ public class ControlMain {
 
     public static void main(String[] args) throws InterruptedException {
         CampoDeBatalla campo = new CampoDeBatalla(800, 600);
-        campo.crearEquipos(3);
+        campo.crearEquipos(11);
         // sin reposicionar manualmente esta vez, que usen sus zonas base reales
 
         GestorCombate gestor = new GestorCombate(campo);
@@ -27,8 +27,8 @@ public class ControlMain {
             pool.submit(new HiloMutante(mutante, campo, gestor));
         }
 
-        System.out.println("Combate iniciado, corriendo por 30 segundos");
-        Thread.sleep(30000);
+        System.out.println("Combate iniciado, corriendo por 3 minutos");
+        Thread.sleep(30000);  
 
         pool.shutdownNow();
         pool.awaitTermination(2, TimeUnit.SECONDS);
