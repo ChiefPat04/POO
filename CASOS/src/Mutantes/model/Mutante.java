@@ -45,6 +45,39 @@ public class Mutante {
         return ConstantesJuego.VELOCIDAD_MUTANTE_MIN + ThreadLocalRandom.current().nextInt(rango);
     }
 
+    private volatile long ultimoGolpeMillis = 0;
+
+    public synchronized void recibirDano(int cantidad) {
+        if (!vivo) {
+            return;
+        }
+
+        if (invisible) {
+            invisible = false;
+            return;
+        }
+
+        int danoFinal = cantidad;
+        if (escudoActivo) {
+            danoFinal = cantidad / 2;
+            escudoActivo = false;
+        }
+
+        energia -= danoFinal;
+        if (danoFinal > 0) {
+            ultimoGolpeMillis = System.currentTimeMillis();
+        }
+
+        if (energia <= 0) {
+            energia = 0;
+            vivo = false;
+        }
+    }
+
+    public long getUltimoGolpeMillis() {
+        return ultimoGolpeMillis;
+    }
+
     public synchronized void moverse (int limiteX, int limiteY) {
         if (!vivo) {
             return;

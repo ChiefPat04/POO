@@ -39,7 +39,7 @@ public class VentanaBatalla extends JFrame {
 
         int tamano = pedirTamanoEquipo();
 
-        campo = new CampoDeBatalla(760, 560);
+        campo = new CampoDeBatalla(700, 500);
         campo.crearEquipos(tamano);
 
         PanelCampoBatalla panelCampo = new PanelCampoBatalla(campo);
@@ -57,7 +57,9 @@ public class VentanaBatalla extends JFrame {
         repaint();
 
         GestorCombate gestor = new GestorCombate(campo);
-        pool = Executors.newFixedThreadPool(ConstantesJuego.CANTIDAD_HILOS_POOL);
+
+        int totalMutantes = campo.getEquipoA().getMutantes().size() + campo.getEquipoB().getMutantes().size();
+        pool = Executors.newFixedThreadPool(totalMutantes);
 
         for (Mutante mutante : campo.getEquipoA().getMutantes()) {
             pool.submit(new HiloMutante(mutante, campo, gestor));
@@ -71,9 +73,23 @@ public class VentanaBatalla extends JFrame {
             if (campo.hayGanador()) {
                 timerRefresco.stop();
                 pool.shutdownNow();
+                anunciarGanadorYPreguntarReinicio();
             }
         });
         timerRefresco.start();
+    }
+
+    private void anunciarGanadorYPreguntarReinicio() {
+        String nombreGanador = campo.getGanador() != null ? campo.getGanador().getColor().toString() : "Nadie";
+
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "Gano el equipo " + nombreGanador + ". Deseas jugar otra partida?",
+                "Fin de la partida",
+                JOptionPane.YES_NO_OPTION);
+
+        if (opcion == JOptionPane.YES_OPTION) {
+            iniciarPartida();
+        }
     }
 
     private void detenerPartidaAnterior() {

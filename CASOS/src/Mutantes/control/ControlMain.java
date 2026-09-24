@@ -16,10 +16,11 @@ public class ControlMain {
         // sin reposicionar manualmente esta vez, que usen sus zonas base reales
 
         GestorCombate gestor = new GestorCombate(campo);
-        ExecutorService pool = Executors.newFixedThreadPool(ConstantesJuego.CANTIDAD_HILOS_POOL);
-        // ... (igual que antes)
 
+        int totalMutantes = campo.getEquipoA().getMutantes().size() + campo.getEquipoB().getMutantes().size();
+        pool = Executors.newFixedThreadPool(totalMutantes);
 
+        
         for (Mutante mutante : campo.getEquipoA().getMutantes()) {
             pool.submit(new HiloMutante(mutante, campo, gestor));
         }
