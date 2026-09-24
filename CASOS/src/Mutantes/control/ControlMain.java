@@ -13,20 +13,12 @@ public class ControlMain {
     public static void main(String[] args) throws InterruptedException {
         CampoDeBatalla campo = new CampoDeBatalla(800, 600);
         campo.crearEquipos(3);
-
-        // Solo para esta prueba: forzamos a que arranquen cerca,
-        // para confirmar rapido que la deteccion y el combate SI disparan.
-        // Las zonas base reales (lejos entre si) se siguen usando en el juego real.
-        for (Mutante mutante : campo.getEquipoA().getMutantes()) {
-            mutante.reposicionar(390, 300);
-        }
-        for (Mutante mutante : campo.getEquipoB().getMutantes()) {
-            mutante.reposicionar(410, 300);
-        }
+        // sin reposicionar manualmente esta vez, que usen sus zonas base reales
 
         GestorCombate gestor = new GestorCombate(campo);
-
         ExecutorService pool = Executors.newFixedThreadPool(ConstantesJuego.CANTIDAD_HILOS_POOL);
+        // ... (igual que antes)
+
 
         for (Mutante mutante : campo.getEquipoA().getMutantes()) {
             pool.submit(new HiloMutante(mutante, campo, gestor));
@@ -35,8 +27,8 @@ public class ControlMain {
             pool.submit(new HiloMutante(mutante, campo, gestor));
         }
 
-        System.out.println("Combate iniciado (mutantes forzados a nacer cerca), corriendo por 5 segundos...");
-        Thread.sleep(5000);
+        System.out.println("Combate iniciado, corriendo por 30 segundos");
+        Thread.sleep(30000);
 
         pool.shutdownNow();
         pool.awaitTermination(2, TimeUnit.SECONDS);

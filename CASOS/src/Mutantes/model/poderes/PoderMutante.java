@@ -41,12 +41,14 @@ public abstract class PoderMutante {
 
     protected int danoConDefensa(Mutante objetivo, boolean objetivoSeDefiende){
         if (objetivoSeDefiende){
-            return getDano() / objetivo.getDefensa();
+            return Math.max(1, getDano() / objetivo.getDefensa());
+            // Math.max(1, ...) es un método de la propia API de Java: devuelve el mayor entre los dos valores que le pasas. 
+            // Si la división da 0 (o técnicamente nunca menos), forzamos que el resultado nunca sea menor que 1. 
+            // Sigue siendo cierto que defenderse reduce el daño (de 3 a 1, por ejemplo, en vez de a 0) 
+            //  solo evita que "defenderse" se vuelva accidentalmente en "inmunidad total" por culpa de cómo Java redondea enteros.
         }
         return getDano();
     }
-    //Es exactamente la fórmula del enunciado (daño completo, o daño dividido entre defensa si el objetivo se defiende), 
-    // extraída una sola vez aquí en la clase padre, 
-    // para que las subclases que sí hacen daño directo (PoderFuerza, PoderVelocidad, PoderRoboEnergia) no tengan que repetir el mismo if cada una por su cuenta. 
-    // Es protected porque solo las subclases la necesitan, nadie más afuera.
+    //garantizar un mínimo de 1 punto de daño cuando el ataque conecta.
+    //Esto es una decisión de diseño: un ataque que conecta (el defensor se defendió, pero el ataque igual "pasó") debería doler algo, aunque sea mínimo — la defensa reduce el daño, no lo debería anular por completo.
 }

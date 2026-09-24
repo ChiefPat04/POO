@@ -32,18 +32,25 @@ public class Mutante {
 
         this.posicionX = 0;
         this.posicionY = 0;
-        this.velocidadX = signoAleatorio() * ConstantesJuego.VELOCIDAD_MUTANTE;
-        this.velocidadY = signoAleatorio() * ConstantesJuego.VELOCIDAD_MUTANTE;
-    }
+        this.velocidadX = signoAleatorio() * magnitudVelocidadAleatoria();
+        this.velocidadY = signoAleatorio() * magnitudVelocidadAleatoria();
+     }
 
     private int signoAleatorio() {
-        return ThreadLocalRandom.current().nextBoolean() ? 1 : -1; 
+        return ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
+    }
+
+    private int magnitudVelocidadAleatoria() {
+        int rango = ConstantesJuego.VELOCIDAD_MUTANTE_MAX - ConstantesJuego.VELOCIDAD_MUTANTE_MIN + 1;
+        return ConstantesJuego.VELOCIDAD_MUTANTE_MIN + ThreadLocalRandom.current().nextInt(rango);
     }
 
     public synchronized void moverse (int limiteX, int limiteY) {
         if (!vivo) {
             return;
         }
+
+        posiblementeCambiarRumbo();
 
         posicionX += velocidadX;
         posicionY += velocidadY;
@@ -56,6 +63,14 @@ public class Mutante {
         if (posicionY < 0 || posicionY > limiteY) {
             velocidadY = -velocidadY;
             posicionY = Math.max(0, Math.min(posicionY, limiteY));
+        }
+    }
+
+    private void posiblementeCambiarRumbo() {
+        boolean cambiarRumbo = ThreadLocalRandom.current().nextDouble() < ConstantesJuego.PROBABILIDAD_CAMBIO_RUMBO;
+        if (cambiarRumbo) {
+            velocidadX = signoAleatorio() * magnitudVelocidadAleatoria();
+            velocidadY = signoAleatorio() * magnitudVelocidadAleatoria();
         }
     }
 
