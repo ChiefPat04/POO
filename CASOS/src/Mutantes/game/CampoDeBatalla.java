@@ -1,18 +1,22 @@
 package mutantes.game;
 
-import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import mutantes.constants.ConstantesJuego;
 import mutantes.model.Mutante;
+import mutantes.model.poderes.PoderDescargaElectrica;
 import mutantes.model.poderes.PoderEscudoEnergia;
+import mutantes.model.poderes.PoderExplosivo;
 import mutantes.model.poderes.PoderFuerza;
 import mutantes.model.poderes.PoderInvisibilidad;
+import mutantes.model.poderes.PoderLlamarada;
 import mutantes.model.poderes.PoderMutante;
 import mutantes.model.poderes.PoderRegeneracion;
 import mutantes.model.poderes.PoderRoboEnergia;
 import mutantes.model.poderes.PoderTeletransportacion;
 import mutantes.model.poderes.PoderVelocidad;
+import mutantes.model.poderes.PoderVeneno;
 
 
 public class CampoDeBatalla {
@@ -92,25 +96,32 @@ public class CampoDeBatalla {
     }
 
     private PoderMutante generarPoderAleatorio(int danoInicial) {
-    int tipo = random.nextInt(7);
+        int tipo = random.nextInt(11);
 
-    switch (tipo) {
-        case 0:
-            return new PoderFuerza(danoInicial);
-        case 1:
-            return new PoderVelocidad(danoInicial);
-        case 2:
-            return new PoderRegeneracion(danoInicial);
-        case 3:
-            return new PoderEscudoEnergia(danoInicial);
-        case 4:
-            return new PoderInvisibilidad(danoInicial);
-        case 5:
-            return new PoderRoboEnergia(danoInicial);
-        default:
-            return new PoderTeletransportacion(danoInicial);
+        switch (tipo) {
+            case 0:
+                return new PoderFuerza(danoInicial);
+            case 1:
+                return new PoderVelocidad(danoInicial);
+            case 2:
+                return new PoderRegeneracion(danoInicial);
+            case 3:
+                return new PoderEscudoEnergia(danoInicial);
+            case 4:
+                return new PoderInvisibilidad(danoInicial);
+            case 5:
+                return new PoderRoboEnergia(danoInicial);
+            case 6:
+                return new PoderTeletransportacion(danoInicial);
+            case 7:
+                return new PoderDescargaElectrica(danoInicial);
+            case 8:
+                return new PoderLlamarada(danoInicial);
+            case 9:
+                return new PoderVeneno(danoInicial);
+            default:
+                return new PoderExplosivo(danoInicial);
         }
-
     }
 
     private int valorAleatorioEntre(int minimo, int maximo){

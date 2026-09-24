@@ -24,5 +24,8 @@ public final class ConstantesJuego {
     public static final int INTERVALO_MOVIMIENTO_MS = 50;
     public static final int CANTIDAD_HILOS_POOL = 8;
     public static final double PROBABILIDAD_CAMBIO_RUMBO = 0.05;
+    public static final int MULTIPLICADOR_LLAMARADA = 2;
+    public static final int MULTIPLICADOR_EXPLOSIVO = 2;
+    public static final double PORCENTAJE_DANO_VENENO = 0.15;
     
 }

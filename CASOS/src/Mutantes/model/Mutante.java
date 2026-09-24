@@ -3,6 +3,7 @@ package mutantes.model;
 import java.util.concurrent.ThreadLocalRandom;
 import mutantes.constants.ConstantesJuego;
 import mutantes.model.poderes.PoderMutante;
+import mutantes.model.poderes.TipoEfecto;
 
 public class Mutante {
 
@@ -20,6 +21,10 @@ public class Mutante {
     private int velocidadX;
     private int velocidadY;
 
+    private volatile long ultimoGolpeMillis = 0;
+    private volatile TipoEfecto ultimoPoderUsado;
+    private volatile long ultimoPoderMillis = 0;
+
     public Mutante(int id, String nombre, int defensa, PoderMutante poder) {
         this.id = id;
         this.nombre = nombre;
@@ -34,7 +39,7 @@ public class Mutante {
         this.posicionY = 0;
         this.velocidadX = signoAleatorio() * magnitudVelocidadAleatoria();
         this.velocidadY = signoAleatorio() * magnitudVelocidadAleatoria();
-     }
+    }
 
     private int signoAleatorio() {
         return ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
@@ -44,8 +49,6 @@ public class Mutante {
         int rango = ConstantesJuego.VELOCIDAD_MUTANTE_MAX - ConstantesJuego.VELOCIDAD_MUTANTE_MIN + 1;
         return ConstantesJuego.VELOCIDAD_MUTANTE_MIN + ThreadLocalRandom.current().nextInt(rango);
     }
-
-    private volatile long ultimoGolpeMillis = 0;
 
     public synchronized void recibirDano(int cantidad) {
         if (!vivo) {
@@ -78,7 +81,15 @@ public class Mutante {
         return ultimoGolpeMillis;
     }
 
-    public synchronized void moverse (int limiteX, int limiteY) {
+    public TipoEfecto getUltimoPoderUsado() {
+        return ultimoPoderUsado;
+    }
+
+    public long getUltimoPoderMillis() {
+        return ultimoPoderMillis;
+    }
+
+    public synchronized void moverse(int limiteX, int limiteY) {
         if (!vivo) {
             return;
         }
@@ -107,7 +118,7 @@ public class Mutante {
         }
     }
 
-    public synchronized void reposicionar(int nuevaX, int nuevaY){
+    public synchronized void reposicionar(int nuevaX, int nuevaY) {
         this.posicionX = nuevaX;
         this.posicionY = nuevaY;
     }
@@ -118,30 +129,6 @@ public class Mutante {
 
     public synchronized int getPosicionY() {
         return posicionY;
-    }
-
-    public synchronized void recibirDano(int cantidad) {
-        if (!vivo) {
-            return;
-        }
-
-        if (invisible) {
-            invisible = false;
-            return;
-        }
-
-        int danoFinal = cantidad;
-        if (escudoActivo) {
-            danoFinal = cantidad / 2;
-            escudoActivo = false;
-        }
-
-        energia -= danoFinal;
-
-        if (energia <= 0) {
-            energia = 0;
-            vivo = false;
-        }
     }
 
     public synchronized void recuperarEnergia(int cantidad) {
@@ -176,6 +163,9 @@ public class Mutante {
         if (!vivo || poder == null) {
             return;
         }
+
+        ultimoPoderUsado = poder.getTipoEfecto();
+        ultimoPoderMillis = System.currentTimeMillis();
 
         poder.aplicarEfecto(this, objetivo, objetivoSeDefiende);
     }

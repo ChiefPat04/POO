@@ -1,12 +1,14 @@
 package mutantes.ui;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.Timer;
 import mutantes.constants.ConstantesJuego;
 import mutantes.control.GestorCombate;
@@ -16,10 +18,16 @@ import mutantes.model.Mutante;
 
 public class VentanaBatalla extends JFrame {
 
+    private static final String CARTA_MENU = "menu";
+    private static final String CARTA_JUEGO = "juego";
+
+    private final CardLayout cardLayout;
+    private final JPanel contenedor;
+    private final JButton botonNuevaPartida;
+
     private CampoDeBatalla campo;
     private ExecutorService pool;
     private Timer timerRefresco;
-    private final JButton botonNuevaPartida;
 
     public VentanaBatalla() {
         setTitle("Batalla de Mutantes");
@@ -27,17 +35,28 @@ public class VentanaBatalla extends JFrame {
         setSize(800, 700);
         setLayout(new BorderLayout());
 
-        botonNuevaPartida = new JButton("Nueva Partida");
-        botonNuevaPartida.addActionListener(evento -> iniciarPartida());
+        cardLayout = new CardLayout();
+        contenedor = new JPanel(cardLayout);
 
-        iniciarPartida();
+        PanelMenu panelMenu = new PanelMenu(this::iniciarPartida);
+        contenedor.add(panelMenu, CARTA_MENU);
+
+        add(contenedor, BorderLayout.CENTER);
+
+        botonNuevaPartida = new JButton("Volver al Menu");
+        botonNuevaPartida.addActionListener(evento -> mostrarMenu());
+
+        cardLayout.show(contenedor, CARTA_MENU);
         setVisible(true);
     }
 
-    private void iniciarPartida() {
+    private void mostrarMenu() {
         detenerPartidaAnterior();
+        cardLayout.show(contenedor, CARTA_MENU);
+    }
 
-        int tamano = pedirTamanoEquipo();
+    private void iniciarPartida(int tamano) {
+        detenerPartidaAnterior();
 
         campo = new CampoDeBatalla(700, 500);
         campo.crearEquipos(tamano);
@@ -49,12 +68,13 @@ public class VentanaBatalla extends JFrame {
         campo.agregarObservador(panelCampo);
         campo.agregarObservador(panelMarcador);
 
-        getContentPane().removeAll();
-        add(panelMarcador, BorderLayout.NORTH);
-        add(panelCampo, BorderLayout.CENTER);
-        add(botonNuevaPartida, BorderLayout.SOUTH);
-        revalidate();
-        repaint();
+        JPanel panelJuego = new JPanel(new BorderLayout());
+        panelJuego.add(panelMarcador, BorderLayout.NORTH);
+        panelJuego.add(panelCampo, BorderLayout.CENTER);
+        panelJuego.add(botonNuevaPartida, BorderLayout.SOUTH);
+
+        contenedor.add(panelJuego, CARTA_JUEGO);
+        cardLayout.show(contenedor, CARTA_JUEGO);
 
         GestorCombate gestor = new GestorCombate(campo);
 
@@ -83,12 +103,12 @@ public class VentanaBatalla extends JFrame {
         String nombreGanador = campo.getGanador() != null ? campo.getGanador().getColor().toString() : "Nadie";
 
         int opcion = JOptionPane.showConfirmDialog(this,
-                "Gano el equipo " + nombreGanador + ". Deseas jugar otra partida?",
+                "Gano el equipo " + nombreGanador + ". Deseas volver al menu?",
                 "Fin de la partida",
                 JOptionPane.YES_NO_OPTION);
 
         if (opcion == JOptionPane.YES_OPTION) {
-            iniciarPartida();
+            mostrarMenu();
         }
     }
 
@@ -98,27 +118,6 @@ public class VentanaBatalla extends JFrame {
         }
         if (pool != null) {
             pool.shutdownNow();
-        }
-    }
-
-    private int pedirTamanoEquipo() {
-        while (true) {
-            String entrada = JOptionPane.showInputDialog(this,
-                    "Tamano de cada equipo (" + ConstantesJuego.TAMANO_EQUIPO + " a "
-                            + ConstantesJuego.TAMANO_EQUIPO_MAX + "):");
-
-            if (entrada == null) {
-                System.exit(0);
-            }
-
-            try {
-                int tamano = Integer.parseInt(entrada.trim());
-                if (tamano >= ConstantesJuego.TAMANO_EQUIPO && tamano <= ConstantesJuego.TAMANO_EQUIPO_MAX) {
-                    return tamano;
-                }
-            } catch (NumberFormatException excepcion) {
-                // se vuelve a pedir, no hacemos nada aqui
-            }
         }
     }
 }
