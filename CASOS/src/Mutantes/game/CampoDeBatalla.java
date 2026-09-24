@@ -1,6 +1,8 @@
 package mutantes.game;
 
 import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 import mutantes.constants.ConstantesJuego;
 import mutantes.model.Mutante;
 import mutantes.model.poderes.PoderEscudoEnergia;
@@ -19,8 +21,9 @@ public class CampoDeBatalla {
     private final int alto;
     private final int radioDeteccion;
     private final Random random;
+    private final List<ObservadorBatalla> observadores = new ArrayList<>();
 
-    private Equipo equipoA;
+    private Equipo equipoA; 
     private Equipo equipoB;
 
     public CampoDeBatalla(int ancho, int alto) {
@@ -66,6 +69,16 @@ public class CampoDeBatalla {
 
         int y = valorAleatorioEntre(0, alto);
         mutante.reposicionar(x, y);
+    }
+
+    public void agregarObservador(ObservadorBatalla observador) {
+        observadores.add(observador);
+    }
+
+    public void notificarObservadores() {
+        for (ObservadorBatalla observador : observadores) {
+            observador.alActualizarEstado();
+        }
     }
 
     private Mutante generarMutanteAleatorio(int id) {
