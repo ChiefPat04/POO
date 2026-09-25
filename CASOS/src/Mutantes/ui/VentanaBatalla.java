@@ -24,6 +24,8 @@ public class VentanaBatalla extends JFrame {
     private final CardLayout cardLayout;
     private final JPanel contenedor;
     private final JButton botonNuevaPartida;
+    private final JButton botonAyuda;
+    private final ReproductorMusica musica = new ReproductorMusica();
 
     private CampoDeBatalla campo;
     private ExecutorService pool;
@@ -46,8 +48,13 @@ public class VentanaBatalla extends JFrame {
         botonNuevaPartida = new JButton("Volver al Menu");
         botonNuevaPartida.addActionListener(evento -> mostrarMenu());
 
+        botonAyuda = new JButton("? Guia de Poderes");
+        botonAyuda.addActionListener(evento -> new DialogoAyudaPoderes(this).setVisible(true));
+
         cardLayout.show(contenedor, CARTA_MENU);
         setVisible(true);
+
+        musica.reproducirEnBucle("/mutantes/imagenes/musica_menu.wav");
     }
 
     private void mostrarMenu() {
@@ -63,15 +70,19 @@ public class VentanaBatalla extends JFrame {
 
         PanelCampoBatalla panelCampo = new PanelCampoBatalla(campo);
         PanelMarcador panelMarcador = new PanelMarcador(campo);
-        panelMarcador.setPreferredSize(new Dimension(760, 80));
+        panelMarcador.setPreferredSize(new Dimension(760, 90));
 
         campo.agregarObservador(panelCampo);
         campo.agregarObservador(panelMarcador);
 
+        JPanel panelBotones = new JPanel();
+        panelBotones.add(botonNuevaPartida);
+        panelBotones.add(botonAyuda);
+
         JPanel panelJuego = new JPanel(new BorderLayout());
         panelJuego.add(panelMarcador, BorderLayout.NORTH);
         panelJuego.add(panelCampo, BorderLayout.CENTER);
-        panelJuego.add(botonNuevaPartida, BorderLayout.SOUTH);
+        panelJuego.add(panelBotones, BorderLayout.SOUTH);
 
         contenedor.add(panelJuego, CARTA_JUEGO);
         cardLayout.show(contenedor, CARTA_JUEGO);
