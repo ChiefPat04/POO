@@ -70,7 +70,7 @@ public final class EfectosVisuales {
             case TELETRANSPORTACION: return "Le permite reposicionarse en el campo de batalla.";
             case DESCARGA_ELECTRICA: return "Ataque de alto dano que ignora por completo la defensa del objetivo.";
             case LLAMARADA: return "Ataque de alto dano (el doble de lo normal), respeta la defensa del objetivo.";
-            case VENENO: return "Ataque proporcional a la energia actual del objetivo: mas doloroso contra rivales debilitados.";
+            case VENENO: return "Ataque proporcional a la energia actual del objetivo: mas doloroso contra rivales sanos que contra los ya debilitados.";
             case EXPLOSION: return "Ataque de alto dano (el doble de lo normal) que ademas ignora la defensa del objetivo.";
             default: return "";
         }

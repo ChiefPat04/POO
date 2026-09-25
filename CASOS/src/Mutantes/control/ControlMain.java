@@ -10,6 +10,8 @@ import mutantes.model.Mutante;
 
 public class ControlMain {
 
+    private static ExecutorService pool;
+
     public static void main(String[] args) throws InterruptedException {
         CampoDeBatalla campo = new CampoDeBatalla(800, 600);
         campo.crearEquipos(11);
