@@ -11,6 +11,9 @@ import mutantes.model.poderes.TipoEfecto;
 public class GestorCombate {
 
     private final CampoDeBatalla campo;
+    // Set concurrente: evita que el mismo par de mutantes se resuelva dos veces
+    // si ambos hilos detectan el encuentro casi al mismo tiempo. add() devuelve
+    // false si la clave ya existia, asi que sirve como "candado" y registro a la vez.
     private final Set<String> paresEnResolucion = ConcurrentHashMap.newKeySet();
 
     public GestorCombate(CampoDeBatalla campo) {
@@ -42,6 +45,8 @@ public class GestorCombate {
                 reposicionarSiTeletransportador(m2);
             }
         } finally {
+            // Siempre libera la clave, incluso si algo falla, para que este par
+            // pueda volver a combatir en un encuentro futuro.
             paresEnResolucion.remove(clave);
         }
     }

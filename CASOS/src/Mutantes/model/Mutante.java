@@ -23,6 +23,9 @@ public class Mutante {
 
     private volatile long ultimoGolpeMillis = 0;
     private volatile TipoEfecto ultimoPoderUsado;
+    // volatile en vez de synchronized: solo necesitamos que otros hilos vean
+    // la ultima asignacion (para el efecto visual de la UI), no proteger una
+    // operacion compuesta de leer-calcular-escribir como si hace recibirDano.
     private volatile long ultimoPoderMillis = 0;
 
     public Mutante(int id, String nombre, int defensa, PoderMutante poder) {

@@ -88,7 +88,9 @@ public class VentanaBatalla extends JFrame {
         cardLayout.show(contenedor, CARTA_JUEGO);
 
         GestorCombate gestor = new GestorCombate(campo);
-
+        // El pool se dimensiona segun la cantidad real de mutantes, no un numero
+        // fijo: cada HiloMutante.run() no termina hasta que el mutante muere, asi
+        // que un pool mas chico deja mutantes esperando turno para siempre sin moverse.
         int totalMutantes = campo.getEquipoA().getMutantes().size() + campo.getEquipoB().getMutantes().size();
         pool = Executors.newFixedThreadPool(totalMutantes);
 

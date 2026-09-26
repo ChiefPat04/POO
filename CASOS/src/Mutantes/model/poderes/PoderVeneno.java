@@ -16,6 +16,9 @@ public class PoderVeneno extends PoderMutante {
 
     @Override
     protected void efectoEspecifico(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
+         // NOTA: esta formula usa la energia ACTUAL del objetivo, por lo que en
+         // realidad hace mas dano contra rivales con energia alta, no contra los
+         // debilitados (al reves de lo que sugiere la descripcion del poder).
         int danoPorPorcentaje = (int) (objetivo.getEnergia() * ConstantesJuego.PORCENTAJE_DANO_VENENO);
         int danoFinal = Math.max(getDano(), danoPorPorcentaje);
         objetivo.recibirDano(danoFinal);

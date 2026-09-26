@@ -15,6 +15,8 @@ public abstract class PoderMutante {
         aplicarEfecto(atacante, objetivo, false);
     }
 
+    // Final a propósito: garantiza que TODA subclase suba de nivel su poder
+    // cuando el ataque conecta, sin depender de que cada una se acuerde de hacerlo.
     public final void aplicarEfecto(Mutante atacante, Mutante objetivo, boolean objetivoSeDefiende) {
         int energiaAntes = objetivo.getEnergia();
 

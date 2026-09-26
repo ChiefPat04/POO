@@ -1,10 +1,7 @@
 package mutantes.control;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
 import mutantes.constants.ConstantesJuego;
 import mutantes.game.CampoDeBatalla;
 import mutantes.game.Equipo;
@@ -37,6 +34,10 @@ public class HiloMutante implements Runnable {
     private void resolverEncuentrosCercanos() {
         Equipo equipoEnemigo = campo.getEquipoEnemigoDe(mutante);
         int radio = campo.getRadioDeteccion();
+        // HashSet normal (no concurrente): solo este hilo lee y escribe esta
+        // coleccion, ningun otro hilo la toca, asi que no necesita proteccion.
+        // Contraste con GestorCombate.paresEnResolucion, que SI la necesita porque
+        // dos hilos distintos pueden tocarlo.
         Set<Integer> enemigosAhoraEnRadio = new HashSet<>();
 
         for (Mutante enemigo : equipoEnemigo.getMutantes()) {
