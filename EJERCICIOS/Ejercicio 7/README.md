@@ -242,3 +242,15 @@ Cada operación sabe a qué `visit` llamar (una línea por clase):
 - **Estados inválidos imposibles:** los datos obligatorios se piden en el constructor (un `ForeignResidentIdentity` siempre tiene fecha de residencia; una transferencia internacional siempre tiene BIC).
 - **Un solo lugar para los errores y las unidades de cada banco:** su adapter.
 - **Abierto a extensión, cerrado a modificación:** nuevas identidades, operaciones o procesadores se agregan sin tocar el servicio.
+
+## 7. Un ejemplo completo: Ana retira 500
+1. `BankingService` recibe la operación y busca la identidad personal de Ana.
+2. Pregunta `identity.canPerform(...)`. La identidad personal responde que sí.
+3. Pregunta `identity.validate(...)`. No hay problemas.
+4. Pregunta `operation.totalAmount()`. Son 500.
+5. Pregunta `identity.dailyLimit()`. El límite es 2,000, así que pasa.
+6. Elige el procesador y pregunta `processor.fee(op)`. National cobra 0.
+7. Llama a `processor.process(...)`. El adapter de National llama al método original postTransaction(...) y devuelve el resultado.
+8. El servicio registra en la auditoría y devuelve el resultado.
+
+En ningún paso el servicio preguntó de qué tipo era cada quién.
