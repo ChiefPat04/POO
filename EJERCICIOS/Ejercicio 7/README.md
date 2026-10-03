@@ -10,7 +10,7 @@
 ## 2. Solución
 
 - **`Identity` pasa a ser una jerarquía.** Cada subclase define sus operaciones permitidas, su límite diario, sus validaciones y sus procesadores permitidos.
-- **`BankOperation` pasa a ser una jerarquía.** Cada operación tiene solo sus datos (el payroll tiene beneficiarios, la transferencia internacional tiene BIC) y calcula su propio total.
+- **`BankOperation` pasa a ser una jerarquía.** Cada operación tiene solo sus datos, por ejemplop: el payroll tiene beneficiarios, la transferencia internacional tiene BIC, y calcula su propio total.
 - **Los procesadores se envuelven con Adapters** (composición) que implementan una interfaz única, `BankProcessor`. Las clases bancarias originales **no se modifican**.
 - **`BankingService` solo orquesta** llamando a métodos polimórficos, sin `switch` por tipo.
 
@@ -163,7 +163,7 @@ processor.fee(operation)                            // cada adapter calcula su c
 processor.process(identity, operation)              // cada adapter llama a su banco
 ```
 
-Ejemplo de una sobreescritura (la regla vive en la clase que le corresponde, no en un `switch`):
+Ejemplo de una sobreescritura, la regla vive en la clase que le corresponde, no en un `switch`:
 
 ```java
 // BusinessIdentity
@@ -230,7 +230,7 @@ public String visit(InternationalTransferOperation op, Identity p) {
 }
 ```
 
-Cada operación sabe a qué `visit` llamar (una línea por clase):
+Cada operación sabe a qué `visit` llamar, trabajando una línea por clase:
 
 ```java
 @Override public <R> R accept(OperationVisitor<R> v, Identity payer) { return v.visit(this, payer); }
