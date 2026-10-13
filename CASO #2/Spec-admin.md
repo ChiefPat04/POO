@@ -31,7 +31,7 @@ Usamos la interpretación de reglas del enunciado. Además, decidimos lo siguien
 - **Pack sin animales**: Si a un jugador se le mueren todos sus animales, **pierde** y gana el otro.
 - **Desconexión**: Si un jugador se desconecta en el lobby, la partida se borra. Si se desconecta eligiendo animal o jugando, **gana el otro jugador**.
 - **Orden de ataque**: Un animal del jugador solo acepta la orden de atacar si el objetivo ya está dentro del rango. Si el objetivo muere o se sale del rango, deja de atacar.
-- **Especies**: Las 7 especies son animales nativos de Costa Rica. **Los nombres de abajo son provisionales** y los vamos a cambiar cuando las escojamos.
+- **Especies**: Las 7 especies son animales nativos de Costa Rica: jaguar, perezoso, mono congo, danta, tucán, rana calzonuda y pizote (ver el enum `Species`).
 
 ---
 
@@ -138,7 +138,15 @@ Da números de id únicos dentro de una partida (1, 2, 3...).
 **Clase principal para tests:** `Pack` (y `Animal`)
 
 #### `Species` (enum)
-Las 7 especies. **Provisionales:**
+Las 7 especies del juego. Todas son animales nativos de Costa Rica:
+
+- **Jaguar** (*Panthera onca*): el felino más grande de América. Vive en los bosques de Corcovado y Talamanca.
+- **Perezoso de tres dedos** (*Bradypus variegatus*): vive en los árboles de casi todo el país.
+- **Mono congo** (*Alouatta palliata*): famoso por sus aullidos fuertes.
+- **Danta** (*Tapirus bairdii*): el mamífero terrestre más grande de Costa Rica.
+- **Tucán pico iris** (*Ramphastos sulfuratus*): ave de pico grande y colorido.
+- **Rana calzonuda** (*Agalychnis callidryas*): rana verde de ojos rojos.
+- **Pizote** (*Nasua narica*): de nariz larga y cola anillada, anda en grupos.
 
 ```
 JAGUAR("Jaguar"), SLOTH("Perezoso"), HOWLER_MONKEY("Mono congo"),
@@ -970,6 +978,6 @@ classDiagram
 
 ## 12. Pendientes
 
-- [ ] Escoger las 7 especies definitivas (nativas de Costa Rica) y cambiar el enum `Species`.
-- [ ] Hacer el spec del cliente.
+- [x] Escoger las 7 especies (nativas de Costa Rica).
+- [x] Hacer el spec del cliente.
 - [ ] Revisar este spec con el profesor.

@@ -79,7 +79,8 @@ jungle-attack-client/
 ### Imágenes (todas SVG)
 ```
 images/
-├── species/   7 archivos, uno por especie (por ejemplo jaguar.svg)
+├── species/   jaguar.svg, sloth.svg, howler_monkey.svg, tapir.svg,
+│              toucan.svg, red_eyed_frog.svg, coati.svg
 ├── coffee.svg
 ├── flag_mine.svg
 ├── flag_enemy.svg
@@ -674,6 +675,7 @@ classDiagram
 
 ## 13. Pendientes
 
-- [ ] Escoger las 7 especies definitivas y hacer (o conseguir) sus 7 SVG.
+- [x] Escoger las 7 especies: jaguar, perezoso, mono congo, danta, tucán, rana calzonuda y pizote.
+- [ ] Hacer (o conseguir) los 7 SVG de las especies.
 - [ ] Hacer los SVG de café, banderas y fondo.
 - [ ] Revisar este spec con el profesor.
