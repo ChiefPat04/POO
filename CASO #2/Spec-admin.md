@@ -1,540 +1,375 @@
-# Jungle Attack - Especificación del Servidor
+# Jungle Attack - Spec del Servidor
 
-Este documento es la especificación (spec) del proyecto **jungle-attack-server**.
-Aquí explicamos qué paquetes y clases tiene el servidor, qué hace cada una,
-qué cosas son `static`, dónde usamos herencia, interfaces y polimorfismo,
-y qué patrones de diseño aplicamos.
+Este documento describe el proyecto **jungle-attack-server**: qué hace el servidor, cómo se comunica con los clientes, sus paquetes y clases, los algoritmos que usa y cómo lo vamos a probar.
 
-El cliente (la interfaz del juego) tiene su propio repositorio y su propio spec.
+El cliente tiene su propio repositorio y su propio spec (`Spec-cliente.md`).
 
 ---
 
-## 1. Idea general
+## 1. Qué hace el servidor
 
-- El servidor es la **autoridad** del juego: él decide todo (movimiento, ataques, cafés, bonos y quién gana).
-- Los clientes solo envían lo que el jugador **quiere hacer** (por ejemplo "mover estos animales aquí") y dibujan lo que el servidor les responde.
-- Los dos clientes nunca se hablan entre ellos. Todo pasa por el servidor usando **sockets** y mensajes **JSON** (un JSON por línea).
-- El servidor puede tener **N partidas** al mismo tiempo.
-
----
-
-## 2. Decisiones que tomamos (interpretación de las reglas)
-
-Usamos la interpretación de reglas del enunciado. Además, decidimos lo siguiente:
-
-- **Forma del mapa**: 12 zonas acomodadas en una cuadrícula de **4 columnas x 3 filas**. Cada zona mide lo mismo que la pantalla del cliente (`ZONE_WIDTH` x `ZONE_HEIGHT`).
-- **Caminos**: Cada zona tiene un **nodo central** y una "puerta" (nodo) hacia cada zona vecina. El centro se une con sus puertas, y cada puerta se une con la puerta de la zona vecina. Así todo el mapa es un **grafo de nodos** y los animales solo caminan por las líneas entre nodos.
-- **Destino del movimiento**: Cuando el jugador hace clic, el servidor busca el **nodo más cercano** al clic y manda a los animales hasta ese nodo, siguiendo la ruta que encuentra **BFS**.
-- **Bots**: Los bots **patrullan su propia zona**. El pack entero escoge al azar un nodo de su zona (el centro o una puerta), camina hasta ahí, espera `BOT_WAIT_MS` y escoge otro. Nunca salen de su zona. Si tienen un enemigo en rango, **se detienen a pelear**. Caminan un poco más lento que los animales del jugador (`BOT_SPEED`).
-- **Cafés**: Los 10 cafés se ponen en **nodos puerta** escogidos al azar (sin repetir). Las puertas están sobre los caminos.
-- **Bandera**: Cada jugador tiene su bandera en el centro de su zona inicial.
-- **Pack sin animales**: Si a un jugador se le mueren todos sus animales, **pierde** y gana el otro.
-- **Desconexión**: Si un jugador se desconecta en el lobby, la partida se borra. Si se desconecta eligiendo animal o jugando, **gana el otro jugador**.
-- **Orden de ataque**: Un animal del jugador solo acepta la orden de atacar si el objetivo ya está dentro del rango. Si el objetivo muere o se sale del rango, deja de atacar.
-- **Especies**: Las 7 especies son animales nativos de Costa Rica: jaguar, perezoso, mono congo, danta, tucán, rana calzonuda y pizote (ver el enum `Species`).
+- Es la **autoridad** del juego. Él calcula todo: movimiento, ataques, cafés, bonos y quién gana.
+- Los clientes solo le dicen lo que el jugador **quiere hacer**, por ejemplo "mover estos animales aquí".
+- Los dos clientes nunca hablan entre ellos. Todo pasa por el servidor, con **sockets** y mensajes **JSON** (un JSON por línea).
+- Puede tener **N partidas** al mismo tiempo.
+- **No manda la posición de todo cada 50 ms.** Solo avisa cuando algo cambia, y en cada aviso manda **hacia dónde va** cada animal. Así cada cliente mueve a los animales por su cuenta (ver sección 3).
 
 ---
 
-## 3. Tecnologías
+## 2. Reglas que decidimos
 
-- **Java**: Java 17
-- **Build**: Maven (`mvn test`, `mvn package`)
-- **JSON**: Gson
-- **Tests**: JUnit 5 (y Mockito si se ocupa)
-- **Automatización**: GitHub Actions corriendo `mvn test` en cada push
+Además de las reglas del enunciado, decidimos lo siguiente:
+
+- **Mapa:** 12 zonas en una cuadrícula de 4 columnas x 3 filas. Cada zona mide lo mismo que la pantalla del cliente (800 x 600).
+- **Caminos:** cada zona tiene un nodo en el centro y una "puerta" hacia cada zona vecina. El centro se une con sus puertas, y cada puerta se une con la puerta de la zona vecina. Así el mapa es un **grafo** y los animales solo caminan por esas líneas.
+- **Destino:** cuando el jugador hace clic, el servidor busca el **nodo más cercano** al clic y manda a los animales hasta ahí por la ruta que encuentra **BFS**.
+- **Bots:** cada pack bot **patrulla su propia zona**. Camina junto a un nodo al azar de su zona, espera unos segundos y escoge otro. Nunca sale de su zona. Si un enemigo entra en su rango, **se detiene a pelear**. Camina más lento que los animales del jugador.
+- **Cafés:** los 10 cafés se ponen en puertas escogidas al azar, sin repetir.
+- **Bandera:** cada jugador tiene su bandera en el centro de su zona inicial.
+- **Pack sin animales:** si a un jugador se le mueren todos sus animales, pierde.
+- **Desconexión:** si un jugador se desconecta antes de que entre el otro, la partida se borra. Si se desconecta después, **gana el otro jugador**.
+- **Orden de ataque:** el animal del jugador solo ataca a su objetivo mientras esté dentro del rango. Si el objetivo muere o se aleja, deja de atacar.
+- **Zona que se ve:** el jugador solo puede ver una zona donde tenga animales vivos. Si se queda sin animales en la zona que está viendo, el servidor lo cambia a otra zona donde sí tenga.
+- **Especies:** las 7 son animales nativos de Costa Rica (ver el enum `Species`).
 
 ---
 
-## 4. Estructura del proyecto
+## 3. Comunicación (mensajes)
 
-```
-jungle-attack-server/
-├── pom.xml
-├── README.md            (diagrama Mermaid y explicación)
-├── SPEC.md              (este documento)
-├── .github/workflows/tests.yml
-└── src/
-    ├── main/java/com/jungleattack/server/
-    │   ├── util/        constantes, posición, generador de ids
-    │   ├── model/       animales, packs, jugador, bandera, café, especies
-    │   ├── map/         zonas, nodos, construcción del mapa, BFS
-    │   ├── game/        la partida, el combate, el estado que se manda a cada jugador
-    │   ├── lobby/       administrador de partidas y generador de códigos
-    │   ├── protocol/    tipos de mensaje, clases de datos (payloads), parser JSON
-    │   └── network/     servidor de sockets y manejo de cada cliente
-    └── test/java/com/jungleattack/server/
-        └── (mismos paquetes, un test por clase principal)
+Cada mensaje es una línea JSON con `type` y `payload`:
+
+```json
+{ "type": "MOVE_ANIMALS", "payload": { "animalIds": [3, 4, 7], "targetX": 812, "targetY": 344 } }
 ```
 
+### Cómo se mantienen actualizados los clientes
+
+- El servidor actualiza el juego 20 veces por segundo, pero **no** manda un mensaje en cada actualización.
+- Le manda un `ZONE_UPDATE` a un jugador **solo cuando**:
+  - algo cambió: una orden de movimiento, un ataque, una muerte, un café tomado, un bot que empezó a caminar o un cambio de zona;
+  - entró o salió un animal de la zona que el jugador está viendo;
+  - pasó 1 segundo desde el último (es un chequeo, por si algo se desfasó).
+- Cada animal del `ZONE_UPDATE` trae su posición, su velocidad y **la ruta que le falta**. El cliente lo va moviendo solo con el mismo cálculo que usa el servidor.
+- El servidor solo manda lo que el jugador puede ver: **todos sus animales**, más lo que haya en **la zona que está viendo** (bots, animales rivales, cafés y bandera). Así se cumple la niebla de guerra.
+- Resultado: en vez de 20 mensajes por segundo por cliente, se mandan más o menos entre 1 y 5.
+
+### Cliente → Servidor
+
+- `CREATE_MATCH`: `nickname`
+- `JOIN_MATCH`: `nickname`, `code`
+- `SELECT_ANIMAL`: `species`
+- `MOVE_ANIMALS`: `animalIds`, `targetX`, `targetY`
+- `ATTACK`: `animalIds`, `targetId`
+- `VIEW_ZONE`: `zoneId`
+
+### Servidor → Cliente
+
+- `MATCH_CREATED`: `code`
+- `MATCH_JOINED`: `code`, `opponent`
+- `ANIMAL_SELECTION`: `available` (lista de especies), `mySpecies`, `opponentSpecies`
+- `GAME_STARTED`: `columns`, `rows`, `zoneWidth`, `zoneHeight`, `paths` (lista de líneas `[x1, y1, x2, y2]` para dibujar los caminos), `myZoneId`, `mySpecies`, `opponent`
+- `ZONE_UPDATE`: `viewedZoneId`, `myZones`, `animals`, `items`, `myDamage`, `myCups`, `myBotsKilled`, `seconds`, `events` (textos cortos, como "Tu pack tomó un café")
+  - Cada animal: `id`, `species`, `x`, `y`, `energy`, `mine`, `bot`, `speed`, `route` (lista de puntos `[x, y]`)
+  - Cada item (café o bandera): `id`, `x`, `y`, `image`
+- `GAME_OVER`: `winner`, `reason`, `seconds`, `players` (por jugador: `nickname`, `species`, `botsKilled`, `cups`, `deadAnimals`), `bots` (por pack bot: `species`, `deadAnimals`)
+- `ERROR`: `message` (por ejemplo "La partida ya está llena")
+
+### Flujo de una partida
+
+1. A manda `CREATE_MATCH` y recibe `MATCH_CREATED` con el código.
+2. B manda `JOIN_MATCH`. Los dos reciben `MATCH_JOINED` y después `ANIMAL_SELECTION`.
+3. Cada uno manda `SELECT_ANIMAL`, y los dos reciben `ANIMAL_SELECTION` actualizado.
+4. Cuando los dos escogieron, los dos reciben `GAME_STARTED` y su primer `ZONE_UPDATE`.
+5. Durante el juego, los clientes mandan `MOVE_ANIMALS`, `ATTACK` y `VIEW_ZONE`, y reciben `ZONE_UPDATE`.
+6. Al final, los dos reciben `GAME_OVER`.
+
 ---
 
-## 5. Paquetes y clases
+## 4. Tecnologías
 
-Notación: `+` público, `-` privado, `#` protegido. *(static)* marca lo que es de la clase y no de cada objeto.
+- **Java 17** (la misma versión en el cliente)
+- **Maven** (`mvn test`, `mvn package`)
+- **Gson** para JSON
+- **JUnit 5** para las pruebas
+- **GitHub Actions** corre `mvn test` en cada push
 
-### 5.1 Paquete `util`
+---
 
-**Clase principal para tests:** `Position`
+## 5. Paquetes
 
-#### `GameConstants` (clase final, todo *static*)
-Aquí van **todos** los números del juego, para no tener números "mágicos" regados en el código.
-Tiene un constructor privado para que nadie pueda hacer `new GameConstants()`.
+```
+src/main/java/com/jungleattack/server/
+├── util/       GameConstants, Position
+├── model/      Species, Animal, PlayerAnimal, BotAnimal, Pack, PlayerPack, BotPack,
+│               Player, MapItem, Flag, CoffeeCup
+├── map/        PathNode, Zone, GameMap, PathFinder
+├── game/       MatchState, GameSession, CombatManager, GameException
+├── lobby/      MatchManager
+├── protocol/   MessageType, Message
+└── network/    MessageSender, GameServer, ClientHandler
+```
 
-- `SERVER_PORT` = 5000: Puerto del servidor
-- `PLAYERS_PER_MATCH` = 2: Jugadores por partida
-- `CODE_LENGTH` = 4: Largo del código de partida
-- `CODE_CHARACTERS` = `"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`: Caracteres permitidos en el código
-- `ZONE_COLUMNS` / `ZONE_ROWS` = 4 / 3: Cuadrícula de zonas (12 zonas)
-- `ZONE_WIDTH` / `ZONE_HEIGHT` = 800 / 600: Tamaño de cada zona en píxeles
-- `DOOR_MARGIN` = 40: Distancia de la puerta al borde de la zona
-- `PLAYER_PACK_SIZE` = 10: Miembros del pack del jugador
-- `PLAYER_START_ENERGY` = 20: Energía inicial de cada animal del jugador
-- `MAX_PLAYER_ENERGY` = 20: Energía máxima del jugador
-- `PLAYER_START_DAMAGE` = 2: Daño inicial del pack del jugador
-- `BOT_PACK_SIZE` = 4: Miembros de un pack bot
-- `BOT_START_ENERGY` = 10: Energía de cada bot
-- `BOT_DAMAGE` = 1: Daño del pack bot
-- `COFFEE_CUP_COUNT` = 10: Cantidad de cafés
-- `COFFEE_DAMAGE_BONUS` = 1: Daño extra por café
-- `BOTS_KILLED_FOR_BONUS` = 2: Cada cuántos bots muertos se da el bono
-- `ENERGY_BONUS` = 1: Energía que da el bono
-- `ANIMAL_SPEED` = 80.0: Velocidad de los animales del jugador (píxeles por segundo)
-- `BOT_SPEED` = 50.0: Velocidad de los bots (píxeles por segundo)
-- `BOT_WAIT_MS` = 3000: Tiempo que espera un pack bot antes de caminar a otro punto
-- `BOT_SPREAD` = 15.0: Qué tan separados quedan los bots al llegar a un punto
-- `ENCOUNTER_RADIUS` = 40.0: Distancia para "encontrarse" y atacar
-- `PICKUP_RADIUS` = 20.0: Distancia para agarrar un café
-- `FLAG_RADIUS` = 30.0: Distancia para tocar la bandera
-- `SPAWN_SPREAD` = 30.0: Qué tan separados aparecen los animales del centro
-- `ATTACK_COOLDOWN_MS` = 1000: 1 ataque por segundo
-- `TICK_MS` = 50: Cada cuánto se actualiza el juego (20 veces por segundo)
+Son **27 clases**. Las pruebas van en `src/test/java` con los mismos paquetes.
 
-#### `Position` (clase final, inmutable)
-Una posición `(x, y)` en el mapa. Inmutable quiere decir que no cambia: si se mueve, se crea una nueva.
+---
 
+## 6. Clases
+
+Notación: `+` público, `-` privado, `#` protegido.
+
+### 6.1 `util`
+
+**`GameConstants`** (clase final, todo `static`, constructor privado)
+Guarda todos los números del juego, para no tener números sueltos en el código.
+
+- **Red:** `SERVER_PORT = 5000`
+- **Código de partida:** `CODE_LENGTH = 4`, `CODE_CHARACTERS = "A..Z0..9"`
+- **Mapa:** `ZONE_COLUMNS = 4`, `ZONE_ROWS = 3`, `ZONE_WIDTH = 800`, `ZONE_HEIGHT = 600`, `DOOR_MARGIN = 40`
+- **Pack del jugador:** `PLAYER_PACK_SIZE = 10`, `PLAYER_START_ENERGY = 20`, `MAX_PLAYER_ENERGY = 20`, `PLAYER_START_DAMAGE = 2`
+- **Pack bot:** `BOT_PACK_SIZE = 4`, `BOT_START_ENERGY = 10`, `BOT_DAMAGE = 1`
+- **Cafés y bono:** `COFFEE_CUP_COUNT = 10`, `COFFEE_DAMAGE_BONUS = 1`, `BOTS_KILLED_FOR_BONUS = 2`, `ENERGY_BONUS = 1`
+- **Movimiento:** `ANIMAL_SPEED = 80` y `BOT_SPEED = 50` (en píxeles por segundo), `SPAWN_SPREAD = 30`
+- **Distancias:** `ENCOUNTER_RADIUS = 40`, `PICKUP_RADIUS = 20`, `FLAG_RADIUS = 30`
+- **Tiempos:** `TICK_MS = 50`, `ATTACK_COOLDOWN_MS = 1000`, `BOT_WAIT_MS = 3000`, `SYNC_MS = 1000`
+- **Mensajes de error:** `ERROR_BAD_CODE`, `ERROR_MATCH_FULL`, `ERROR_SPECIES_TAKEN`, etc.
+
+**`Position`**
+Un punto `(x, y)` del mapa. Es **mutable**: cuando un animal camina, su posición cambia.
 ```
 - double x
 - double y
 + Position(double x, double y)
-+ getX(): double
-+ getY(): double
-+ distanceTo(Position other): double             // distancia con Pitágoras
-+ moveTowards(Position target, double distance): Position   // avanza "distance" hacia target
-+ equals / hashCode / toString
++ Position(Position other)                         // crea una copia
++ getX(), getY(), setX(), setY()
++ distanceTo(Position other): double               // Pitágoras
++ moveTowards(Position target, double distance)    // avanza hacia target sin pasarse
 ```
+Cuidado: dos objetos no deben compartir la misma `Position`. Cuando se necesite la misma posición en otro lado, se usa la copia.
 
-#### `IdGenerator`
-Da números de id únicos dentro de una partida (1, 2, 3...).
+### 6.2 `model`
 
+**`Species`** (enum)
 ```
-- int nextId
-+ next(): int
-```
-
----
-
-### 5.2 Paquete `model`
-
-**Clase principal para tests:** `Pack` (y `Animal`)
-
-#### `Species` (enum)
-Las 7 especies del juego. Todas son animales nativos de Costa Rica:
-
-- **Jaguar** (*Panthera onca*): el felino más grande de América. Vive en los bosques de Corcovado y Talamanca.
-- **Perezoso de tres dedos** (*Bradypus variegatus*): vive en los árboles de casi todo el país.
-- **Mono congo** (*Alouatta palliata*): famoso por sus aullidos fuertes.
-- **Danta** (*Tapirus bairdii*): el mamífero terrestre más grande de Costa Rica.
-- **Tucán pico iris** (*Ramphastos sulfuratus*): ave de pico grande y colorido.
-- **Rana calzonuda** (*Agalychnis callidryas*): rana verde de ojos rojos.
-- **Pizote** (*Nasua narica*): de nariz larga y cola anillada, anda en grupos.
-
-```
-JAGUAR("Jaguar"), SLOTH("Perezoso"), HOWLER_MONKEY("Mono congo"),
-TAPIR("Danta"), TOUCAN("Tucán"), RED_EYED_FROG("Rana calzonuda"), COATI("Pizote")
+JAGUAR("Jaguar", "jaguar.svg"), SLOTH("Perezoso", "sloth.svg"),
+HOWLER_MONKEY("Mono congo", "howler_monkey.svg"), TAPIR("Danta", "tapir.svg"),
+TOUCAN("Tucán", "toucan.svg"), RED_EYED_FROG("Rana calzonuda", "red_eyed_frog.svg"),
+COATI("Pizote", "coati.svg")
 
 - String displayName
-+ getDisplayName(): String
+- String imageFile
++ getDisplayName(), getImageFile()
 ```
 
-#### `Animal` (clase **abstracta**)
-Lo que tienen en común todos los animales, de jugador y bots.
-
+**`Animal`** (abstracta)
+Lo que tienen en común los animales del jugador y los bots.
 ```
 - int id
 - Pack pack
 - Position position
 - int energy
 - long lastAttackTime
-- List<Position> route              // puntos que le faltan por caminar
-+ Animal(int id, Pack pack, Position position, int energy)
-+ getters (id, pack, position, energy)
-+ isAlive(): boolean                // energy > 0
-+ receiveDamage(int amount): void   // energy baja, nunca menos de 0
-+ heal(int amount, int max): void   // energy sube, nunca más de max
-+ canAttack(long now): boolean      // ya pasó ATTACK_COOLDOWN_MS desde el último ataque
-+ isInRange(Animal other): boolean  // distancia <= ENCOUNTER_RADIUS
-+ isEnemyOf(Animal other): boolean  // distinto pack y no son los dos bots
-+ setRoute(List<Position> route): void
-+ isMoving(): boolean
-+ stopMoving(): void                // borra la ruta
-+ moveStep(double seconds): void    // avanza getSpeed() * seconds siguiendo la ruta
-+ abstract getSpeed(): double       // cada hijo dice qué tan rápido camina
-+ tryAttack(List<Animal> enemiesInRange, long now): Animal   // MÉTODO PLANTILLA (final)
-# abstract chooseTarget(List<Animal> enemiesInRange): Animal // cada hijo decide a quién atacar
+- List<Position> route                        // puntos que le faltan por caminar
++ isAlive(): boolean                          // energy > 0
++ receiveDamage(int amount)                   // nunca baja de 0
++ heal(int amount, int max)                   // nunca pasa de max
++ canAttack(long now): boolean                // pasó ATTACK_COOLDOWN_MS desde el último ataque
++ isInRange(Animal other): boolean            // distancia <= ENCOUNTER_RADIUS
++ isEnemyOf(Animal other): boolean            // distinto pack y no son los dos bots
++ setRoute(List<Position> route), stopMoving(), isMoving()
++ moveStep(double seconds)                    // avanza getSpeed() * seconds por la ruta
++ tryAttack(List<Animal> enemiesInRange, long now): Animal   // devuelve el animal que mató, o null
+# abstract chooseTarget(List<Animal> enemiesInRange): Animal
++ abstract getSpeed(): double
 + abstract isBot(): boolean
 ```
 
-`tryAttack` hace siempre los mismos pasos: revisa si está vivo y si ya puede atacar, **le pregunta al hijo** a quién atacar (`chooseTarget`), ataca y devuelve el animal que murió (o `null`).
+**`PlayerAnimal`** (hereda de `Animal`)
+- Tiene `orderedTarget`: el animal que el jugador le mandó atacar.
+- `chooseTarget` devuelve solo ese objetivo. Si murió o se salió del rango, lo olvida y devuelve `null`.
+- `getSpeed()` devuelve `ANIMAL_SPEED`.
 
-#### `PlayerAnimal` (hereda de `Animal`)
-```
-- Animal orderedTarget              // el objetivo que el jugador le ordenó
-+ PlayerAnimal(int id, PlayerPack pack, Position position)  // energía PLAYER_START_ENERGY
-+ setOrderedTarget(Animal target): void
-+ getOrderedTarget(): Animal
-# chooseTarget(...): Animal          // solo ataca su objetivo ordenado; si murió o se salió del rango lo olvida
-+ getSpeed(): ANIMAL_SPEED
-+ isBot(): false
-```
+**`BotAnimal`** (hereda de `Animal`)
+- `chooseTarget` devuelve al enemigo más cercano.
+- `getSpeed()` devuelve `BOT_SPEED`.
 
-#### `BotAnimal` (hereda de `Animal`)
-```
-+ BotAnimal(int id, BotPack pack, Position position)  // energía BOT_START_ENERGY
-# chooseTarget(...): Animal          // ataca solo al enemigo más cercano
-+ getSpeed(): BOT_SPEED
-+ isBot(): true
-```
-
-**Aquí está el polimorfismo:** el combate llama `animal.tryAttack(...)` sin saber si es bot o jugador, y cada uno elige su objetivo a su manera.
-
-#### `Pack` (clase **abstracta**)
+**`Pack`** (abstracta)
 Una manada. El daño es del pack y lo comparten todos sus miembros.
-
 ```
 - Species species
 - List<Animal> members
 - int damage
-+ Pack(Species species, int startDamage)
-+ getSpecies(), getDamage(), getMembers()
-+ createMembers(Position center, Random random, IdGenerator ids): void
-      // crea getSize() animales alrededor del centro usando createAnimal(...)
-# abstract createAnimal(int id, Position position): Animal   // FACTORY METHOD
-# abstract getSize(): int
-+ increaseDamage(int amount): void
++ createMembers(Position center, int firstId, Random random)   // crea getSize() animales alrededor del centro
+# abstract createAnimal(int id, Position position): Animal     // cada hijo crea su tipo de animal
++ abstract getSize(): int
++ abstract isBot(): boolean
++ increaseDamage(int amount)
 + getAliveMembers(): List<Animal>
 + countDead(): int
-+ isEliminated(): boolean           // todos muertos
-+ findAnimalById(int id): Animal
-+ abstract isBot(): boolean
++ isEliminated(): boolean                    // todos muertos
++ findAnimal(int id): Animal
 ```
 
-#### `PlayerPack` (hereda de `Pack`)
-```
-- Player owner
-+ PlayerPack(Species species, Player owner)   // daño PLAYER_START_DAMAGE
-# createAnimal(...): new PlayerAnimal(...)
-# getSize(): PLAYER_PACK_SIZE
-+ healAll(int amount): void          // +amount a cada vivo, máximo MAX_PLAYER_ENERGY
-+ getOwner(): Player
-+ isBot(): false
-```
+**`PlayerPack`** (hereda de `Pack`)
+- Tiene su `owner` (el `Player` dueño).
+- Crea `PlayerAnimal`s, tiene 10 miembros y empieza con daño 2.
+- `healAll(int amount)` le suma energía a cada animal vivo, sin pasar de 20.
 
-#### `BotPack` (hereda de `Pack`)
-```
-- int homeZoneId                     // la zona que patrulla
-- long nextMoveTime                  // cuándo puede volver a caminar
-- boolean waiting                    // true mientras está esperando en un punto
-+ BotPack(Species species, int homeZoneId)   // daño BOT_DAMAGE
-# createAnimal(...): new BotAnimal(...)
-# getSize(): BOT_PACK_SIZE
-+ getHomeZoneId(): int
-+ updatePatrol(GameMap map, Random random, long now): void   // ver 7.6
-+ isBot(): true
-```
+**`BotPack`** (hereda de `Pack`)
+- Tiene `homeZoneId` (la zona que patrulla) y `nextMoveTime` (cuándo vuelve a caminar).
+- Crea `BotAnimal`s, tiene 4 miembros y su daño es 1.
+- `updatePatrol(GameMap map, Random random, long now): boolean` devuelve `true` si el pack empezó a caminar (ver 7.5).
 
-#### `Player`
+**`Player`**
 ```
 - String nickname
-- MessageSender sender               // por donde se le mandan mensajes (interfaz)
+- MessageSender sender              // por donde se le mandan los mensajes
 - Species species
 - PlayerPack pack
 - Flag flag
-- int startZoneId
-- int viewedZoneId                   // la zona que está viendo
-- int botsKilled
-- int cupsTaken
-+ Player(String nickname, MessageSender sender)
-+ getters y setters necesarios
-+ addBotKill(): boolean              // suma 1 y devuelve true si toca dar bono (múltiplo de 2)
-+ addCup(): void
-+ send(String json): void            // usa sender.send(json)
+- int viewedZoneId                  // la zona que está viendo
+- List<Integer> lastVisibleIds      // los animales que vio en el último ZONE_UPDATE
+- int botsKilled, cupsTaken
++ addBotKill(): boolean             // suma 1 y devuelve true si llegó a un múltiplo de 2
++ addCup()
++ send(Message message)
 ```
 
-#### `MapItem` (clase **abstracta**)
-Algo que está quieto en el mapa y que se puede "tocar".
+**`MapItem`** (abstracta)
+Algo que está quieto en el mapa y se puede tocar.
 ```
 - int id
 - Position position
 - double touchRadius
-+ MapItem(int id, Position position, double touchRadius)
-+ getId(), getPosition()
-+ isTouchedBy(Animal animal): boolean   // distancia <= touchRadius
+- String imageFile                  // la imagen que el cliente tiene que pintar
++ isTouchedBy(Animal animal): boolean
++ getters
 ```
 
-#### `Flag` (hereda de `MapItem`)
-```
-- Player owner
-+ Flag(int id, Position position, Player owner)   // radio FLAG_RADIUS
-+ getOwner(): Player
-```
+**`Flag`** (hereda de `MapItem`)
+- Tiene su `owner` (el `Player` dueño). El radio es `FLAG_RADIUS`.
+- La imagen es `flag_red.svg` para el jugador 1 y `flag_blue.svg` para el jugador 2.
 
-#### `CoffeeCup` (hereda de `MapItem`)
-```
-- boolean taken
-+ CoffeeCup(int id, Position position)            // radio PICKUP_RADIUS
-+ isTaken(): boolean
-+ take(): void
-```
+**`CoffeeCup`** (hereda de `MapItem`)
+- Tiene `taken` y el método `take()`. El radio es `PICKUP_RADIUS` y la imagen es `coffee.svg`.
 
----
+### 6.3 `map`
 
-### 5.3 Paquete `map`
-
-**Clase principal para tests:** `PathFinder` (y `MapBuilder`)
-
-#### `PathNode`
-Un punto del camino. Los nodos unidos forman el grafo.
+**`PathNode`**: un punto del grafo.
 ```
 - int id
 - Position position
 - int zoneId
 - List<PathNode> neighbors
-+ connect(PathNode other): void      // une en los dos sentidos
-+ getters
++ connect(PathNode other)           // los une en los dos sentidos
 ```
 
-#### `Zone`
+**`Zone`**: una de las 12 zonas.
 ```
-- int id
-- int column
-- int row
-- PathNode centerNode
-- List<PathNode> doorNodes
-+ getMinX(), getMinY(): double
+- int id, column, row
+- PathNode center
+- List<PathNode> nodes              // el centro y sus puertas
++ getMinX(), getMinY()
 + contains(Position p): boolean
-+ getters
 ```
 
-#### `GameMap`
+**`GameMap`**: el mapa completo. Su constructor arma las 12 zonas y conecta las vecinas.
 ```
 - List<Zone> zones
 - List<PathNode> nodes
++ GameMap()
 + getZone(int id): Zone
-+ getZoneIdAt(Position p): int       // columna = x / ZONE_WIDTH, fila = y / ZONE_HEIGHT
++ getZoneIdAt(Position p): int      // columna = x / 800, fila = y / 600
 + findNearestNode(Position p): PathNode
-+ getAllDoorNodes(): List<PathNode>
-+ getNodes(), getZones()
++ getDoorNodes(): List<PathNode>
++ getPathLines(): List<double[]>    // las líneas que se mandan en GAME_STARTED
 ```
 
-#### `MapBuilder`
-Construye el mapa de 4x3 con sus nodos y caminos.
+**`PathFinder`**
 ```
-+ build(): GameMap
-- createZones(...)
-- connectNeighbors(...)              // crea las puertas entre zonas vecinas
++ static findRoute(PathNode start, PathNode end): List<Position>    // BFS
 ```
 
-#### `PathFinder`
-Busca la ruta con **BFS** (búsqueda en anchura).
-```
-+ findRoute(PathNode start, PathNode end): List<PathNode>   (static)
-```
+### 6.4 `game`
 
----
+**`MatchState`** (enum): `WAITING_FOR_PLAYER`, `SELECTING_ANIMALS`, `PLAYING`, `FINISHED`
 
-### 5.4 Paquete `game`
-
-**Clase principal para tests:** `CombatManager` (y `GameSession`)
-
-#### `MatchState` (enum)
-`WAITING_FOR_PLAYER`, `SELECTING_ANIMALS`, `PLAYING`, `FINISHED`
-
-#### `GameSession`
-Una partida. Sus métodos son `synchronized` porque la usan varios hilos (ver sección 8).
+**`GameSession`**: una partida. Sus métodos públicos son `synchronized` (ver sección 8).
 ```
 - String code
 - Player player1, player2
 - MatchState state
 - GameMap map
-- List<Pack> packs                   // 2 de jugador + 5 bots
+- List<Pack> packs                  // 2 de jugadores + 5 bots
 - List<CoffeeCup> cups
 - Random random
-- IdGenerator ids
 - CombatManager combat
-- StateUpdateBuilder stateBuilder
 - ScheduledExecutorService loop
-- long startTime, lastTickTime
-- Player winner
+- int nextId
+- long startTime, lastTickTime, lastSyncTime
+- boolean changed                   // algo pasó en este tick y hay que avisar
 + GameSession(String code, Player creator, Random random)
-+ addSecondPlayer(Player p): void
-+ isFull(): boolean
-+ selectSpecies(Player p, Species s): void       // lanza GameException si ya la tomaron
-+ getAvailableSpecies(): List<Species>
-+ startGame(long now): void          // mapa, zonas al azar, packs, banderas, cafés, arranca el loop
-+ moveAnimals(Player p, List<Integer> ids, double x, double y): void
-+ orderAttack(Player p, List<Integer> ids, int targetId): void
-+ changeViewedZone(Player p, int zoneId): void
-+ tick(long now): void               // una vuelta del juego
-+ playerDisconnected(Player p): void
-+ getOpponent(Player p): Player
-+ getters (code, state, players, packs, cups, map, startTime)
-- updateBots(long now)               // llama updatePatrol de cada BotPack
-- moveAllAnimals(double seconds)     // los bots que están peleando no se mueven
-- checkCoffeeCups()
-- checkFlags()
-- checkEliminatedPlayers()
++ addSecondPlayer(Player p), isFull()
++ selectSpecies(Player p, Species s)          // GameException si ya la tomaron
++ startGame(long now)
++ moveAnimals(Player p, List<Integer> ids, double x, double y)
++ orderAttack(Player p, List<Integer> ids, int targetId)
++ changeViewedZone(Player p, int zoneId)
++ tick(long now)
++ playerDisconnected(Player p)
+- sendZoneUpdate(Player p)
 - endGame(Player winner, String reason)
-- sendStateUpdates(long now)
 ```
 
-#### `CombatManager`
-Toda la lógica de ataques, separada de la partida para poder probarla sola.
+**`CombatManager`**: los ataques, separados de la partida para poder probarlos solos.
 ```
-+ processAttacks(List<Animal> allAnimals, long now): void
-+ findEnemiesInRange(Animal animal, List<Animal> all): List<Animal>
-- registerKill(Animal attacker, Animal victim): void   // cuenta bots muertos y da el bono
-```
-
-#### `StateUpdateBuilder`
-Arma el `STATE_UPDATE` de **un** jugador, solo con lo que ese jugador puede ver (niebla de guerra).
-```
-+ build(GameSession session, Player player, long now): StateUpdateData
-- isZoneVisible(Player player, int zoneId): boolean   // tiene algún animal vivo ahí
-- getZonesWithMyAnimals(Player player): List<Integer>
++ processAttacks(List<Animal> all, long now): boolean    // true si hubo algún ataque
++ findEnemiesInRange(Animal a, List<Animal> all): List<Animal>
+- registerKill(Animal attacker, Animal victim)           // cuenta los bots muertos y da el bono
 ```
 
-#### `GameException` (hereda de `Exception`)
-Error de reglas del juego (por ejemplo "especie ya tomada"). Lleva un `ErrorCode`.
+**`GameException`** (hereda de `Exception`): un error de las reglas del juego. Su mensaje se le manda al cliente en un `ERROR`.
 
----
+### 6.5 `lobby`
 
-### 5.5 Paquete `lobby`
-
-**Clase principal para tests:** `MatchManager` (y `CodeGenerator`)
-
-#### `MatchManager` (**Singleton**)
-Guarda todas las partidas activas.
+**`MatchManager`** (Singleton): guarda todas las partidas activas.
 ```
-- static MatchManager instance                     (static)
+- static MatchManager instance
 - ConcurrentHashMap<String, GameSession> sessions
-- CodeGenerator codeGenerator
-- MatchManager()                                   // privado
-+ getInstance(): MatchManager                      (static)
-+ createMatch(Player creator): GameSession
-+ joinMatch(String code, Player player): GameSession   // lanza GameException
-+ removeMatch(String code): void
-+ getMatchCount(): int
-+ clear(): void                                    // solo para tests
-```
-
-#### `CodeGenerator`
-```
 - Random random
-+ CodeGenerator(Random random)
-+ generate(): String                               // 4 caracteres al azar de CODE_CHARACTERS
-+ generateUnique(Set<String> usedCodes): String    // repite hasta que no exista
-+ normalize(String code): String  (static)         // pasa a mayúsculas y quita espacios
++ static getInstance(): MatchManager
++ createMatch(Player creator): GameSession
++ joinMatch(String code, Player p): GameSession     // GameException si el código no existe o la partida está llena
++ removeMatch(String code)
++ generateCode(): String                           // 4 caracteres, sin repetir con las partidas activas
++ static normalizeCode(String code): String         // pasa a mayúsculas y quita espacios
 ```
 
----
+### 6.6 `protocol`
 
-### 5.6 Paquete `protocol`
+**`MessageType`** (enum): los 13 tipos de la sección 3.
 
-**Clase principal para tests:** `MessageParser`
-
-#### `MessageType` (enum)
-`CREATE_MATCH, JOIN_MATCH, SELECT_ANIMAL, MOVE_ANIMALS, ATTACK, VIEW_ZONE,
-MATCH_CREATED, MATCH_JOINED, ERROR, ANIMAL_SELECTION, GAME_STARTED, STATE_UPDATE, GAME_OVER`
-
-#### `ErrorCode` (enum)
-`INVALID_NICKNAME, INVALID_CODE, MATCH_FULL, SPECIES_TAKEN, INVALID_ACTION`, cada uno con su mensaje de texto.
-
-#### `Message`
-El "sobre" de todos los mensajes.
+**`Message`**: el "sobre" de todos los mensajes. Adentro lleva un `JsonObject` de Gson.
 ```
 - MessageType type
 - JsonObject payload
-+ getters
+- static Gson gson
++ Message(MessageType type)
++ put(String key, Object value): Message    // agrega un dato (número, texto o lista)
++ getInt(key), getDouble(key), getString(key), getArray(key), getIntList(key)
++ toJson(): String                          // el mensaje en una sola línea
++ static fromJson(String line): Message
 ```
+Ejemplo: `new Message(MessageType.MATCH_CREATED).put("code", "A7K2")`.
+El cliente tiene una copia igual de estas dos clases.
 
-#### `MessageParser` (métodos *static*)
-```
-- static Gson gson                                 (static)
-+ toJson(MessageType type, Object payload): String (static)
-+ fromJson(String line): Message                   (static)
-+ readPayload(Message msg, Class<T> clazz): T      (static)
-```
+### 6.7 `network`
 
-#### Clases de datos (payloads)
-Son clases simples con atributos privados, constructor y getters. **No tienen lógica.**
-El cliente tiene una copia igual de estas clases.
+**`MessageSender`** (interfaz): `send(Message message)`.
+La implementa `ClientHandler`. En los tests usamos un sender falso que guarda los mensajes en una lista, así no hace falta un socket real.
 
-**Cliente → Servidor**
+**`GameServer`**: tiene el `main`. Abre el `ServerSocket`, acepta conexiones y le da a cada cliente un `ClientHandler` en un `ExecutorService`.
 
-- `CreateMatchRequest`: nickname
-- `JoinMatchRequest`: nickname, code
-- `SelectAnimalRequest`: species
-- `MoveAnimalsRequest`: animalIds, targetX, targetY
-- `AttackRequest`: animalIds, targetId
-- `ViewZoneRequest`: zoneId
-
-**Servidor → Cliente**
-
-- `MatchCreatedData`: code
-- `MatchJoinedData`: code, opponentNickname
-- `ErrorData`: errorCode, message
-- `AnimalSelectionData`: availableSpecies, mySpecies, opponentSpecies
-- `GameStartedData`: map (`MapData`), myZoneId, mySpecies, opponentNickname
-- `StateUpdateData`: viewedZoneId, zonesWithMyAnimals, myAnimals, visibleAnimals, visibleCups, visibleFlags, myDamage, myCups, myBotsKilled, elapsedSeconds, events
-- `GameOverData`: winnerNickname, reason, summary (`SummaryData`)
-
-**Clases de apoyo**
-
-- `AnimalInfo`: id, species, x, y, energy, bot, mine
-- `CupInfo`: id, x, y
-- `FlagInfo`: id, x, y, mine
-- `MapData`: columns, rows, zoneWidth, zoneHeight, nodes (`NodeInfo`), paths (`PathInfo`)
-- `NodeInfo`: id, x, y, zoneId
-- `PathInfo`: fromNodeId, toNodeId
-- `SummaryData`: durationSeconds, players (`PlayerSummary`), packs (`PackSummary`)
-- `PlayerSummary`: nickname, species, botsKilled, cupsTaken
-- `PackSummary`: species, bot, deadAnimals, totalAnimals
-
----
-
-### 5.7 Paquete `network`
-
-**Clase principal para tests:** `ClientHandler`
-
-#### `MessageSender` (**interfaz**)
-```
-+ send(String json): void
-```
-La usamos para que `Player` y `GameSession` no dependan de un socket real. En los tests usamos un `MessageSender` falso que guarda los mensajes en una lista.
-
-#### `ServerMain`
-Tiene el `main`. Solo crea el `GameServer` y lo arranca.
-
-#### `GameServer`
-```
-- int port
-- ExecutorService pool
-+ GameServer(int port)
-+ start(): void        // ServerSocket, acepta clientes y crea un ClientHandler por cada uno
-```
-
-#### `ClientHandler` (implementa `Runnable` y `MessageSender`)
-Atiende a **un** cliente en su propio hilo.
+**`ClientHandler`** (implementa `Runnable` y `MessageSender`): atiende a un cliente en su propio hilo.
 ```
 - Socket socket
 - BufferedReader in
@@ -542,91 +377,45 @@ Atiende a **un** cliente en su propio hilo.
 - Player player
 - GameSession session
 + ClientHandler(Socket socket)
-+ ClientHandler(BufferedReader in, PrintWriter out)   // para tests sin red
-+ run(): void                       // lee línea por línea hasta que se desconecte
-+ handleLine(String line): void     // convierte a Message y hace switch por tipo
-+ send(String json): void           // synchronized
-- handleCreateMatch(...), handleJoinMatch(...), handleSelectAnimal(...),
-  handleMove(...), handleAttack(...), handleViewZone(...)
-- sendError(ErrorCode code): void
-- disconnect(): void                // avisa a la partida y cierra el socket
++ ClientHandler(BufferedReader in, PrintWriter out)    // para tests
++ run()                         // lee línea por línea hasta que el cliente se desconecte
++ handleLine(String line)       // un switch según el tipo de mensaje
++ send(Message message)         // synchronized
 ```
-
----
-
-## 6. Resumen de POO y patrones
-
-### `static`
-- `GameConstants`: todas sus constantes.
-- `MatchManager.instance` y `MatchManager.getInstance()`.
-- `MessageParser`: el `Gson` y todos sus métodos.
-- `PathFinder.findRoute(...)`.
-- `CodeGenerator.normalize(...)`.
-
-### Herencia
-- `Animal` → `PlayerAnimal`, `BotAnimal`
-- `Pack` → `PlayerPack`, `BotPack`
-- `MapItem` → `Flag`, `CoffeeCup`
-- `Exception` → `GameException`
-
-### Interfaces
-- `MessageSender` (la implementa `ClientHandler`, y en los tests un sender falso)
-- `Runnable` (la implementa `ClientHandler`)
-
-### Polimorfismo
-- `Animal.chooseTarget(...)`: el bot ataca al más cercano y el animal del jugador solo ataca al objetivo que se le ordenó.
-- `Pack.createAnimal(...)`: cada pack crea su propio tipo de animal.
-- `Animal.getSpeed()`: cada tipo de animal camina a su propia velocidad.
-- `isBot()` en `Animal` y en `Pack`.
-- `MapItem.isTouchedBy(...)` sirve igual para banderas y cafés.
-
-### Patrones de diseño
-
-- **Singleton**
-  - Clases: `MatchManager`
-  - Por qué: Solo debe existir un administrador de partidas en el servidor.
-- **Factory Method**
-  - Clases: `Pack` (creador), `PlayerPack` / `BotPack` (creadores concretos), `PlayerAnimal` / `BotAnimal` (productos)
-  - Por qué: Cada pack sabe qué tipo de animal crear y `createMembers` no tiene que preguntar con `if`.
-- **Template Method**
-  - Clases: `Animal.tryAttack` (plantilla), `chooseTarget` (paso que cambia)
-  - Por qué: Los pasos de un ataque son siempre iguales y solo cambia a quién se ataca.
-
-(Los patrones **Observer** y **MVC** van en el cliente.)
 
 ---
 
 ## 7. Algoritmos
 
-### 7.1 BFS para la ruta (`PathFinder`)
-1. Meter el nodo inicial en una cola (`Queue`) y marcarlo como visitado.
-2. Mientras la cola no esté vacía, sacar un nodo. Si es el destino, terminar.
-3. Por cada vecino no visitado: marcarlo, guardar de dónde vino (`previous.put(vecino, actual)`) y meterlo a la cola.
-4. Para armar la ruta, se va hacia atrás desde el destino usando `previous` y al final se le da vuelta a la lista.
+### 7.1 Ruta con BFS (`PathFinder.findRoute`)
+1. Meter el nodo inicial en una cola y marcarlo como visitado.
+2. Sacar un nodo de la cola. Si es el destino, terminar.
+3. Por cada vecino no visitado: marcarlo, guardar de qué nodo vino y meterlo a la cola.
+4. Para armar la ruta, ir hacia atrás desde el destino y luego darle vuelta a la lista.
 
-BFS encuentra la ruta con **menos saltos**. Como todos los caminos son parecidos, eso es suficiente.
+BFS encuentra la ruta con **menos saltos**. Como los caminos miden parecido, eso alcanza.
 
 ### 7.2 Movimiento a velocidad constante (`Animal.moveStep`)
 ```
-distancia = ANIMAL_SPEED * seconds
+distancia = getSpeed() * seconds
 mientras distancia > 0 y la ruta no esté vacía:
-    siguiente = primer punto de la ruta
-    d = distancia hasta siguiente
-    si d <= distancia: llegar al punto, quitarlo de la ruta, distancia -= d
-    si no: avanzar "distancia" hacia el punto, distancia = 0
+    d = distancia hasta el primer punto de la ruta
+    si d <= distancia: llegar al punto, quitarlo de la ruta, distancia = distancia - d
+    si no: avanzar "distancia" hacia el punto y terminar
 ```
-`seconds` es el tiempo real desde el tick anterior (deltaTime). Así la velocidad no cambia aunque un tick llegue tarde.
-`ANIMAL_SPEED` aquí es en realidad `getSpeed()`, porque cada tipo de animal da su propia velocidad (polimorfismo).
+`seconds` es el tiempo real desde el tick anterior, así la velocidad no cambia aunque un tick se atrase. **El cliente usa este mismo cálculo.**
 
-### 7.3 Un tick del juego (`GameSession.tick`)
-1. Calcular `seconds = (now - lastTickTime) / 1000.0`.
-2. Actualizar la patrulla de los bots (`updateBots`).
-3. Mover todos los animales vivos (`moveStep`). Si un bot tiene un enemigo en rango, se llama `stopMoving()` y no camina.
-4. Revisar cafés: si un animal de jugador toca uno que no se ha tomado, se toma, el pack recibe +1 de daño y el jugador suma 1 café.
-5. Combate: `combat.processAttacks(todosLosAnimales, now)`.
-6. Revisar banderas: si un animal toca la bandera **del rival**, gana su dueño.
-7. Revisar si a algún jugador se le murieron todos los animales.
-8. Si se terminó, `endGame(...)`. Si no, mandar un `STATE_UPDATE` a cada jugador.
+### 7.3 Un tick del juego (`GameSession.tick`), cada 50 ms
+1. `seconds = (now - lastTickTime) / 1000.0`
+2. Patrulla de los bots: si algún pack empezó a caminar, `changed = true`.
+3. Los bots que tienen un enemigo en rango se detienen (`stopMoving`).
+4. Mover a todos los animales vivos con `moveStep(seconds)`.
+5. Cafés: si un animal de un jugador toca un café que nadie ha tomado, se lo toma, el pack gana +1 de daño y `changed = true`.
+6. Combate: `changed = combat.processAttacks(...)` (si no había cambiado ya).
+7. Banderas: si un animal toca la bandera **del rival**, gana su dueño.
+8. Si a un jugador se le murieron todos los animales, gana el otro.
+9. Si un jugador ya no tiene animales en la zona que ve, se le cambia a una donde sí tenga.
+10. Avisarle a cada jugador (ver 7.6) y poner `changed = false`.
 
 ### 7.4 Combate (`CombatManager.processAttacks`)
 ```
@@ -635,121 +424,152 @@ por cada animal vivo:
     muerto = animal.tryAttack(enemigos, now)
     si muerto != null: registerKill(animal, muerto)
 ```
-`registerKill`: si el atacante es de un jugador y el muerto es un bot, `player.addBotKill()`. Si eso devuelve `true` (llegó a un múltiplo de 2), `pack.healAll(ENERGY_BONUS)`.
+- `tryAttack` siempre hace los mismos pasos: revisa que el animal esté vivo y que ya pueda atacar, le pide el objetivo a `chooseTarget`, le quita `damage` de energía y devuelve el animal si murió.
+- `registerKill`: si un animal de un jugador mató a un bot, se llama `player.addBotKill()`. Si devuelve `true`, se llama `pack.healAll(1)`.
+- Ejemplo del enunciado: 4 bots atacan a 1 animal del jugador (20 de energía). Le hacen 4 de daño por segundo, así que muere en 5 segundos. Él hace 2 de daño por segundo, así que mata a un bot (10 de energía) en esos mismos 5 segundos.
 
-Ejemplo del enunciado: 1 animal del jugador (20 de energía) contra 4 bots (daño 1 cada uno) recibe 4 de daño por segundo y muere en 5 segundos. Él hace daño 2 por segundo, así que mata a un bot (10 de energía) en el segundo 5.
+### 7.5 Patrulla de los bots (`BotPack.updatePatrol`)
+```
+si algún bot vivo está caminando:
+    nextMoveTime = now + BOT_WAIT_MS     // la espera empieza a contar cuando lleguen
+    devolver false
+si now < nextMoveTime: devolver false
+destino = un nodo al azar de su zona
+a cada bot vivo: ruta = findRoute(nodo más cercano al bot, destino)
+devolver true
+```
+El pack camina junto, así que cuando se encuentra con alguien, los 4 bots atacan a la vez. Como usa el `Random` de la partida, en los tests el movimiento es predecible.
 
-### 7.5 Inicio de la partida (`GameSession.startGame`)
-1. Construir el mapa con `MapBuilder`.
-2. Hacer una lista de las 12 zonas, revolverla con `Collections.shuffle(lista, random)` y tomar las primeras 7: las 2 primeras para los jugadores y las otras 5 para los bots.
-3. Crear los packs y sus miembros alrededor del centro de su zona. Cada `BotPack` recibe su zona como `homeZoneId`.
+### 7.6 Cuándo mandar un `ZONE_UPDATE`
+```
+por cada jugador:
+    visibles = ids de sus animales + ids de los animales de la zona que está viendo
+    si changed o visibles != lastVisibleIds o now - lastSyncTime >= SYNC_MS:
+        sendZoneUpdate(jugador)
+        lastVisibleIds = visibles
+```
+`lastSyncTime` se actualiza cuando se manda el chequeo de cada segundo.
+
+### 7.7 Inicio de la partida (`GameSession.startGame`)
+1. Crear el `GameMap`.
+2. Revolver los ids de las 12 zonas con `Collections.shuffle(lista, random)`. Las 2 primeras son para los jugadores y las 5 siguientes para los bots.
+3. Crear los 7 packs con sus animales alrededor del centro de su zona.
 4. Poner la bandera de cada jugador en el centro de su zona.
-5. Escoger 10 nodos puerta al azar y poner un café en cada uno.
-6. Mandar `GAME_STARTED` a los dos jugadores y arrancar el loop cada `TICK_MS`.
-
-Usamos el `Random` que recibe el constructor, así en los tests podemos usar una **semilla fija** y siempre sale lo mismo.
-
-### 7.6 Patrulla de los bots (`BotPack.updatePatrol`)
-```
-si algún bot vivo del pack todavía está caminando: no hacer nada
-si no está esperando (acaba de llegar):
-    waiting = true
-    nextMoveTime = now + BOT_WAIT_MS
-si está esperando y now >= nextMoveTime:
-    destino = un nodo al azar de su zona (centro o puertas), distinto al más cercano
-    por cada bot vivo:
-        ruta = PathFinder.findRoute(nodo más cercano al bot, destino)
-        al último punto se le suma un corrimiento al azar de hasta BOT_SPREAD
-        bot.setRoute(ruta)
-    waiting = false
-```
-- El pack camina **junto**, así que al encontrárselo siguen atacando los 4 a la vez, como en el ejemplo del enunciado.
-- Los destinos siempre son de su propia zona, así que el pack nunca sale de ella.
-- El corrimiento al final es para que los 4 bots no queden dibujados uno encima del otro.
-- Como usa el `Random` de la partida, en los tests el movimiento es predecible.
+5. Poner 10 cafés en puertas al azar.
+6. Mandar `GAME_STARTED` y arrancar el `loop` cada `TICK_MS`.
 
 ---
 
 ## 8. Hilos
 
-- **Hilo principal**: `GameServer` acepta conexiones.
-- **Un hilo por cliente**: `ClientHandler` lee los mensajes de ese cliente.
-- **Un hilo por partida**: El `ScheduledExecutorService` llama `tick()` cada `TICK_MS`.
+- **Hilo principal:** `GameServer` acepta conexiones.
+- **Un hilo por cliente:** su `ClientHandler` lee los mensajes que manda.
+- **Un hilo por partida:** el `ScheduledExecutorService` llama a `tick()` cada 50 ms.
 
-Como el hilo del cliente y el hilo de la partida tocan la misma `GameSession`, sus métodos públicos son **`synchronized`**. Así solo un hilo a la vez puede cambiarla.
-`ClientHandler.send()` también es `synchronized` para que dos mensajes no se mezclen en la misma línea.
-Los sockets se cierran con `try-with-resources` o en un `finally`.
+El hilo del cliente y el de la partida tocan la misma `GameSession`, por eso sus métodos públicos son `synchronized`: solo un hilo a la vez puede cambiarla. `ClientHandler.send()` también es `synchronized`, para que dos mensajes no se mezclen en la misma línea. Los sockets se cierran en un `finally`.
 
 ---
 
-## 9. Protocolo de mensajes
+## 9. POO y patrones
 
-Un JSON por línea, en UTF-8, siempre con `type` y `payload`.
-
-```json
-{ "type": "CREATE_MATCH", "payload": { "nickname": "Ana" } }
-{ "type": "MATCH_CREATED", "payload": { "code": "A7K2" } }
-{ "type": "JOIN_MATCH", "payload": { "nickname": "Luis", "code": "a7k2" } }
-{ "type": "SELECT_ANIMAL", "payload": { "species": "JAGUAR" } }
-{ "type": "MOVE_ANIMALS", "payload": { "animalIds": [3, 4, 7], "targetX": 812, "targetY": 344 } }
-{ "type": "ATTACK", "payload": { "animalIds": [3, 4], "targetId": 41 } }
-{ "type": "VIEW_ZONE", "payload": { "zoneId": 5 } }
-{ "type": "ERROR", "payload": { "errorCode": "MATCH_FULL", "message": "La partida ya está llena" } }
-```
-
-Flujo normal:
-1. A manda `CREATE_MATCH` y recibe `MATCH_CREATED` con el código.
-2. B manda `JOIN_MATCH` y los dos reciben `MATCH_JOINED`, luego `ANIMAL_SELECTION`.
-3. Cada uno manda `SELECT_ANIMAL`, y los dos reciben `ANIMAL_SELECTION` actualizado.
-4. Cuando los dos eligieron, los dos reciben `GAME_STARTED`.
-5. Durante el juego llega `STATE_UPDATE` unas 20 veces por segundo, y los clientes mandan `MOVE_ANIMALS`, `ATTACK` y `VIEW_ZONE`.
-6. Al final, `GAME_OVER` con el resumen.
+- **`static`:** las constantes de `GameConstants`, `MatchManager.getInstance()`, `MatchManager.normalizeCode()`, `PathFinder.findRoute()`, `Message.fromJson()` y el `Gson` de `Message`.
+- **Herencia:**
+  - `Animal` → `PlayerAnimal`, `BotAnimal`
+  - `Pack` → `PlayerPack`, `BotPack`
+  - `MapItem` → `Flag`, `CoffeeCup`
+  - `Exception` → `GameException`
+- **Interfaces:** `MessageSender` (la implementa `ClientHandler`) y `Runnable`.
+- **Polimorfismo:**
+  - `chooseTarget()`: el bot ataca al más cercano y el animal del jugador solo ataca al que se le ordenó.
+  - `getSpeed()`: cada tipo de animal camina a su velocidad.
+  - `createAnimal()`: cada pack crea su propio tipo de animal.
+  - `isTouchedBy()` y `getImageFile()` funcionan igual para cafés y banderas.
+- **Patrones:**
+  - **Singleton:** `MatchManager`. Solo debe haber un administrador de partidas.
+  - **Factory Method:** `Pack.createAnimal()`. `createMembers()` no tiene que preguntar con `if` qué tipo de animal crear.
+  - **Template Method:** `Animal.tryAttack()`. Los pasos de un ataque son siempre iguales y solo cambia `chooseTarget()`.
 
 ---
 
-## 10. Plan de pruebas (JUnit 5)
+## 10. Pruebas (JUnit 5)
 
-- `PositionTest` (paquete `util`): Distancia, `moveTowards` sin pasarse del destino.
-- `AnimalTest` (paquete `model`): Daño, muerte en 0, energía nunca negativa, cooldown de 1 segundo, el bot elige al más cercano, el animal del jugador olvida el objetivo si se sale del rango.
-- `PackTest` (paquete `model`): Tamaños 10/4, energías 20/10, daños 2/1, el café suma +1 a todo el pack, `healAll` no pasa de 20.
-- `BotPackTest` (paquete `model`): La patrulla espera `BOT_WAIT_MS`, escoge un destino de su zona y nunca sale de ella.
-- `PathFinderTest` (paquete `map`): Ruta entre zonas vecinas, entre esquinas opuestas, ruta al mismo nodo.
-- `MapBuilderTest` (paquete `map`): Hay 12 zonas y todas están conectadas.
-- `CombatManagerTest` (paquete `game`): El ejemplo del enunciado (muere en 5 s, mata un bot en 5 s), los bots no se atacan entre ellos, bono cada 2 bots.
-- `GameSessionTest` (paquete `game`): Especie repetida da error, quedan 5 bots, 7 zonas distintas, café se toma una sola vez, tocar la bandera rival termina la partida.
-- `CodeGeneratorTest` (paquete `lobby`): Largo 4, solo caracteres válidos, códigos únicos, mayúsculas/minúsculas iguales.
-- `MatchManagerTest` (paquete `lobby`): Código inválido, partida llena, se borra al terminar.
-- `MessageParserTest` (paquete `protocol`): Ida y vuelta (round trip) de cada tipo de mensaje.
-- `ClientHandlerTest` (paquete `network`): Mandar `CREATE_MATCH` por un `StringReader` y revisar que responde `MATCH_CREATED`.
+Hay al menos un test por paquete, todos sin red real:
+
+- **`PositionTest`** (util): la distancia y que `moveTowards` no se pase del destino.
+- **`AnimalTest`** (model):
+  - el daño, la muerte en 0 y que la energía nunca quede negativa;
+  - el cooldown de 1 segundo;
+  - que el bot escoge al más cercano;
+  - que el animal del jugador olvida su objetivo cuando se sale del rango;
+  - que `moveStep` mantiene la velocidad constante.
+- **`PackTest`** (model):
+  - los tamaños 10 y 4, las energías 20 y 10 y los daños 2 y 1;
+  - que el café le da +1 a todo el pack;
+  - que `healAll` no pasa de 20;
+  - que la patrulla nunca sale de su zona.
+- **`PathFinderTest`** (map): las rutas entre zonas vecinas y entre esquinas opuestas, y que las 12 zonas están conectadas.
+- **`CombatManagerTest`** (game): el ejemplo del enunciado, que los bots no se atacan entre ellos y el bono cada 2 bots.
+- **`GameSessionTest`** (game):
+  - que no se puede repetir especie y que quedan 5 bots;
+  - que las 7 zonas iniciales son distintas;
+  - que un café se toma una sola vez;
+  - que tocar la bandera rival termina la partida;
+  - que no se manda un `ZONE_UPDATE` si no cambió nada.
+- **`MatchManagerTest`** (lobby):
+  - que el código tiene 4 caracteres válidos y no se repite;
+  - que las mayúsculas y minúsculas dan igual;
+  - el código inválido y la partida llena.
+- **`MessageTest`** (protocol): ida y vuelta (`toJson` → `fromJson`) de cada tipo de mensaje.
+- **`ClientHandlerTest`** (network): mandar `CREATE_MATCH` con un `StringReader` y revisar que responde `MATCH_CREATED`.
 
 GitHub Actions corre `mvn test` en cada push.
 
 ---
 
-## 11. Diagrama de clases (Mermaid)
-
-Las clases de datos del paquete `protocol` (payloads) no salen en el diagrama para que no quede tan grande.
+## 11. Diagrama de clases
 
 ```mermaid
 classDiagram
     direction TB
 
-    class GameConstants {
-        <<utility>>
-        +int PLAYER_PACK_SIZE$
-        +int BOT_PACK_SIZE$
-        +double ENCOUNTER_RADIUS$
-        +long ATTACK_COOLDOWN_MS$
-    }
     class Position {
         -double x
         -double y
         +distanceTo(Position other) double
-        +moveTowards(Position target, double distance) Position
+        +moveTowards(Position target, double distance) void
     }
-    class IdGenerator {
-        -int nextId
-        +next() int
+
+    class Animal {
+        <<abstract>>
+        -int id
+        -Position position
+        -int energy
+        -List~Position~ route
+        +moveStep(double seconds) void
+        +tryAttack(List~Animal~ enemies, long now) Animal
+        #chooseTarget(List~Animal~ enemies)* Animal
+        +getSpeed()* double
+    }
+    class PlayerAnimal {
+        -Animal orderedTarget
+    }
+    class BotAnimal
+
+    class Pack {
+        <<abstract>>
+        -Species species
+        -List~Animal~ members
+        -int damage
+        +createMembers(Position center, int firstId, Random random) void
+        #createAnimal(int id, Position p)* Animal
+        +isEliminated() boolean
+    }
+    class PlayerPack {
+        +healAll(int amount) void
+    }
+    class BotPack {
+        -int homeZoneId
+        +updatePatrol(GameMap map, Random random, long now) boolean
     }
 
     class Species {
@@ -763,172 +583,71 @@ classDiagram
         COATI
     }
 
-    class Animal {
-        <<abstract>>
-        -int id
-        -Position position
-        -int energy
-        -long lastAttackTime
-        -List~Position~ route
-        +isAlive() boolean
-        +receiveDamage(int amount) void
-        +canAttack(long now) boolean
-        +isEnemyOf(Animal other) boolean
-        +moveStep(double seconds) void
-        +stopMoving() void
-        +tryAttack(List~Animal~ enemies, long now) Animal
-        #chooseTarget(List~Animal~ enemies)* Animal
-        +getSpeed()* double
-        +isBot()* boolean
-    }
-    class PlayerAnimal {
-        -Animal orderedTarget
-        +setOrderedTarget(Animal target) void
-        #chooseTarget(List~Animal~ enemies) Animal
-    }
-    class BotAnimal {
-        #chooseTarget(List~Animal~ enemies) Animal
-    }
-
-    class Pack {
-        <<abstract>>
-        -Species species
-        -List~Animal~ members
-        -int damage
-        +createMembers(Position center, Random random, IdGenerator ids) void
-        #createAnimal(int id, Position position)* Animal
-        #getSize()* int
-        +increaseDamage(int amount) void
-        +getAliveMembers() List~Animal~
-        +isEliminated() boolean
-    }
-    class PlayerPack {
-        -Player owner
-        +healAll(int amount) void
-    }
-    class BotPack {
-        -int homeZoneId
-        -long nextMoveTime
-        -boolean waiting
-        +updatePatrol(GameMap map, Random random, long now) void
-    }
-
     class Player {
         -String nickname
         -int viewedZoneId
         -int botsKilled
         -int cupsTaken
-        +addBotKill() boolean
-        +addCup() void
-        +send(String json) void
+        +send(Message m) void
     }
 
     class MapItem {
         <<abstract>>
-        -int id
         -Position position
-        -double touchRadius
-        +isTouchedBy(Animal animal) boolean
+        -String imageFile
+        +isTouchedBy(Animal a) boolean
     }
-    class Flag {
-        -Player owner
-    }
+    class Flag
     class CoffeeCup {
         -boolean taken
-        +take() void
     }
 
-    class PathNode {
-        -int id
-        -int zoneId
-        -List~PathNode~ neighbors
-        +connect(PathNode other) void
-    }
-    class Zone {
-        -int id
-        -int column
-        -int row
-        +contains(Position p) boolean
-    }
     class GameMap {
-        +getZoneIdAt(Position p) int
         +findNearestNode(Position p) PathNode
+        +getZoneIdAt(Position p) int
     }
-    class MapBuilder {
-        +build() GameMap
+    class Zone
+    class PathNode {
+        -List~PathNode~ neighbors
     }
     class PathFinder {
-        +findRoute(PathNode start, PathNode end)$ List~PathNode~
+        +findRoute(PathNode start, PathNode end)$ List~Position~
     }
 
-    class MatchState {
-        <<enumeration>>
-        WAITING_FOR_PLAYER
-        SELECTING_ANIMALS
-        PLAYING
-        FINISHED
-    }
     class GameSession {
-        -String code
         -MatchState state
-        -List~Pack~ packs
-        -List~CoffeeCup~ cups
-        -Random random
-        +selectSpecies(Player p, Species s) void
+        -boolean changed
         +startGame(long now) void
         +moveAnimals(Player p, List~Integer~ ids, double x, double y) void
         +orderAttack(Player p, List~Integer~ ids, int targetId) void
         +tick(long now) void
-        +playerDisconnected(Player p) void
     }
     class CombatManager {
-        +processAttacks(List~Animal~ all, long now) void
-        +findEnemiesInRange(Animal a, List~Animal~ all) List~Animal~
+        +processAttacks(List~Animal~ all, long now) boolean
     }
-    class StateUpdateBuilder {
-        +build(GameSession s, Player p, long now) StateUpdateData
-    }
-
     class MatchManager {
         <<Singleton>>
-        -MatchManager instance$
         -ConcurrentHashMap~String, GameSession~ sessions
         +getInstance()$ MatchManager
-        +createMatch(Player creator) GameSession
+        +createMatch(Player p) GameSession
         +joinMatch(String code, Player p) GameSession
-        +removeMatch(String code) void
-    }
-    class CodeGenerator {
-        -Random random
-        +generateUnique(Set~String~ used) String
-        +normalize(String code)$ String
     }
 
-    class MessageParser {
-        +toJson(MessageType type, Object payload)$ String
-        +fromJson(String line)$ Message
-    }
     class Message {
         -MessageType type
         -JsonObject payload
+        +toJson() String
+        +fromJson(String line)$ Message
     }
-
     class MessageSender {
         <<interface>>
-        +send(String json) void
-    }
-    class GameServer {
-        -int port
-        -ExecutorService pool
-        +start() void
+        +send(Message m) void
     }
     class ClientHandler {
-        -Player player
-        -GameSession session
         +run() void
         +handleLine(String line) void
-        +send(String json) void
     }
+    class GameServer
 
     Animal <|-- PlayerAnimal
     Animal <|-- BotAnimal
@@ -938,46 +657,28 @@ classDiagram
     MapItem <|-- CoffeeCup
     MessageSender <|.. ClientHandler
 
-    Pack "1" *-- "many" Animal : members
-    Animal --> Pack : pack
-    Animal --> Position
+    Pack "1" *-- "many" Animal
     Pack --> Species
+    Animal --> Position
+    MapItem --> Position
     PlayerPack --> Player : owner
-    Player --> MessageSender
-    Player --> PlayerPack
     Flag --> Player : owner
+    Player --> MessageSender
 
     GameMap "1" *-- "12" Zone
-    GameMap "1" *-- "many" PathNode
-    Zone --> PathNode : centerNode
-    MapBuilder ..> GameMap : creates
+    Zone *-- PathNode
     PathFinder ..> PathNode
-    BotPack ..> GameMap : patrols
     BotPack ..> PathFinder
 
     GameSession *-- GameMap
     GameSession "1" *-- "7" Pack
     GameSession "1" *-- "10" CoffeeCup
     GameSession --> "2" Player
-    GameSession --> MatchState
     GameSession --> CombatManager
-    GameSession --> StateUpdateBuilder
-    GameSession --> IdGenerator
-
     MatchManager o-- GameSession
-    MatchManager --> CodeGenerator
 
-    GameServer ..> ClientHandler : creates
+    GameServer ..> ClientHandler : crea
     ClientHandler --> MatchManager
     ClientHandler --> GameSession
-    ClientHandler ..> MessageParser
-    MessageParser ..> Message
+    ClientHandler ..> Message
 ```
-
----
-
-## 12. Pendientes
-
-- [x] Escoger las 7 especies (nativas de Costa Rica).
-- [x] Hacer el spec del cliente.
-- [ ] Revisar este spec con el profesor.

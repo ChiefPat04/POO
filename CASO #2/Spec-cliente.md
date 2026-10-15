@@ -1,681 +1,430 @@
-# Jungle Attack - Especificación del Cliente
+# Jungle Attack - Spec del Cliente
 
-Este documento es la especificación (spec) del proyecto **jungle-attack-client**, la aplicación que usa cada jugador para jugar.
-Aquí explicamos qué paquetes y clases tiene el cliente, qué hace cada una, qué cosas son `static`,
-dónde usamos herencia, interfaces y polimorfismo, y qué patrones de diseño aplicamos.
+Este documento describe el proyecto **jungle-attack-client**, que es el juego que usa cada jugador: sus pantallas, cómo se juega con el mouse, sus paquetes y clases, y cómo lo vamos a probar.
 
-El servidor tiene su propio repositorio y su propio spec.
+Los mensajes que se intercambian con el servidor están en la sección 3 de `Spec-admin.md`.
 
 ---
 
-## 1. Idea general
+## 1. Qué hace el cliente
 
-- El cliente **no tiene lógica del juego**. No calcula daño, ni rutas, ni quién gana. Eso lo hace el servidor.
-- El cliente hace tres cosas:
+- **No decide nada del juego.** No calcula daño, ni rutas, ni quién gana. Eso lo hace el servidor.
+- Hace cuatro cosas:
   1. **Escucha** los mensajes del servidor y guarda lo que recibe en el modelo.
-  2. **Dibuja** lo que hay en el modelo.
-  3. **Convierte los clics del mouse** en mensajes para el servidor (por ejemplo "mover estos animales aquí").
-- Está organizado con **MVC** (Modelo - Vista - Controlador) y **Observer**.
-- Se usa principalmente con el **mouse**.
+  2. **Mueve** a los animales en pantalla. Cada `ZONE_UPDATE` dice dónde está cada animal y qué ruta le falta, y el cliente lo va avanzando a su velocidad (es el mismo cálculo que usa el servidor).
+  3. **Dibuja** lo que hay en el modelo.
+  4. **Convierte los clics** en mensajes para el servidor.
+- Está organizado con **MVC** (Modelo, Vista, Controlador) y **Observer**.
 
 ---
 
-## 2. Cómo se juega con el mouse
+## 2. Cómo se juega
 
-- **Clic izquierdo sobre un animal mío**: Lo selecciona (y quita la selección anterior).
-- **Shift + clic izquierdo sobre un animal mío**: Lo agrega o lo quita de la selección.
-- **Arrastrar con clic izquierdo**: Dibuja un rectángulo y selecciona todos mis animales que quedan adentro.
-- **Clic izquierdo en un lugar vacío**: Quita la selección.
-- **Clic derecho sobre un enemigo (bot o rival)**: Los animales seleccionados lo atacan (`ATTACK`).
-- **Clic derecho en un lugar vacío**: Los animales seleccionados caminan hacia ahí (`MOVE_ANIMALS`).
-- **Clic en una zona del minimapa**: Cambia la zona que estoy viendo (`VIEW_ZONE`). Solo funciona en zonas donde tengo animales vivos.
+### Pantallas
 
----
+- **Menú:** campos de servidor (por defecto `localhost`), nickname y código, más los botones "Crear partida" y "Unirse". Al crear una partida, en esa misma pantalla aparece el código y el mensaje "Esperando al otro jugador...".
+- **Selección:** 7 botones, uno por especie, cada uno con su imagen. Las especies que ya tomó el rival salen deshabilitadas.
+- **Juego:** a la izquierda, la zona que el jugador está viendo (800 x 600). A la derecha, un panel con sus datos y el minimapa.
+- **Fin:** una ventana (`JOptionPane`) con el ganador y el resumen. Al cerrarla, el jugador vuelve al menú.
 
-## 3. Pantallas
+### Mouse
 
-- **Menú**: Campo de servidor (por defecto `localhost`), campo de nickname, botón "Crear partida", campo de código y botón "Unirse".
-- **Esperando**: Muestra el código de la partida en grande y el mensaje "Esperando al otro jugador...".
-- **Selección**: 7 botones, uno por especie, con su imagen. Las especies que ya tomó el rival salen deshabilitadas. Muestra qué escogió cada uno.
-- **Juego**: A la izquierda, el área del mapa con la zona que estoy viendo. A la derecha, el panel de información (HUD) con el minimapa.
-- **Fin**: Ganador y resumen: bots eliminados, animales eliminados de cada pack, cafés de cada jugador y duración. Botón "Volver al menú".
+- **Clic izquierdo sobre un animal mío:** lo selecciona.
+- **Arrastrar con el clic izquierdo:** selecciona todos mis animales que queden dentro del rectángulo.
+- **Clic izquierdo en un lugar vacío:** quita la selección.
+- **Clic derecho sobre un enemigo:** los animales seleccionados lo atacan (`ATTACK`).
+- **Clic derecho en un lugar vacío:** los animales seleccionados caminan hacia ahí (`MOVE_ANIMALS`).
+- **Clic en una zona del minimapa:** el jugador pasa a ver esa zona (`VIEW_ZONE`). Solo funciona en las zonas donde tiene animales vivos.
 
----
+### Panel de datos (a la derecha)
 
-## 4. Tecnologías
-
-- **Java**: Java 17 (la misma versión que el servidor)
-- **Build**: Maven
-- **Interfaz**: Swing (`JFrame`, `JPanel`, `CardLayout`)
-- **SVG**: JSVG (`com.github.weisj:jsvg`)
-- **JSON**: Gson
-- **Tests**: JUnit 5
-- **Automatización**: GitHub Actions corriendo `mvn test` en cada push
+- Especie, daño actual del pack, cafés tomados, bots eliminados, animales vivos, cuántos animales hay seleccionados y el tiempo de la partida.
+- Los últimos 5 eventos, por ejemplo "Tu pack tomó un café".
+- **Minimapa** de 4 x 3 cuadritos:
+  - la zona que se está viendo tiene un borde grueso;
+  - las zonas donde el jugador tiene animales salen de color;
+  - las demás salen grises.
 
 ---
 
-## 5. Estructura del proyecto
+## 3. Tecnologías
 
-```
-jungle-attack-client/
-├── pom.xml
-├── README.md            (diagrama Mermaid y explicación)
-├── SPEC.md              (este documento)
-├── .github/workflows/tests.yml
-└── src/
-    ├── main/
-    │   ├── java/com/jungleattack/client/
-    │   │   ├── util/        constantes e interpolación
-    │   │   ├── protocol/    tipos de mensaje, payloads y parser (copia del servidor)
-    │   │   ├── network/     conexión con el servidor
-    │   │   ├── model/       el estado que el cliente conoce
-    │   │   ├── controller/  mensajes del servidor y acciones del mouse
-    │   │   └── view/        ventana, pantallas, dibujo e imágenes
-    │   └── resources/images/   todos los SVG
-    └── test/java/com/jungleattack/client/
-        └── (mismos paquetes, un test por clase principal)
-```
+- **Java 17** (la misma versión que el servidor)
+- **Maven**
+- **Swing** (`JFrame`, `JPanel`, `CardLayout`)
+- **JSVG** para cargar las imágenes SVG
+- **Gson** para JSON
+- **JUnit 5** para las pruebas
+- **GitHub Actions** corre `mvn test` en cada push
 
-### Imágenes (todas SVG)
-```
-images/
-├── species/   jaguar.svg, sloth.svg, howler_monkey.svg, tapir.svg,
-│              toucan.svg, red_eyed_frog.svg, coati.svg
-├── coffee.svg
-├── flag_mine.svg
-├── flag_enemy.svg
-└── grass.svg  (fondo de la zona)
-```
-Los caminos se dibujan con líneas (`Graphics2D`), no con imágenes.
+### Imágenes (SVG, en `src/main/resources/images/`)
+
+- **Especies:** `jaguar.svg`, `sloth.svg`, `howler_monkey.svg`, `tapir.svg`, `toucan.svg`, `red_eyed_frog.svg`, `coati.svg`
+- **Objetos:** `coffee.svg`, `flag_red.svg`, `flag_blue.svg`
+- **Fondo:** `grass.svg`
+
+Los caminos se dibujan con líneas, no con imágenes.
 
 ---
 
-## 6. Paquetes y clases
+## 4. Paquetes
 
-Notación: `+` público, `-` privado, `#` protegido. *(static)* marca lo que es de la clase y no de cada objeto.
-
-### 6.1 Paquete `util`
-
-**Clase principal para tests:** `Interpolator`
-
-#### `ClientConstants` (clase final, todo *static*)
-Todos los números y textos fijos del cliente. Tiene un constructor privado.
-
-- `DEFAULT_HOST` = `"localhost"`: Servidor por defecto
-- `SERVER_PORT` = 5000: Puerto (igual al del servidor)
-- `WINDOW_TITLE` = `"Jungle Attack"`: Título de la ventana
-- `ZONE_VIEW_WIDTH` / `ZONE_VIEW_HEIGHT` = 800 / 600: Tamaño del área del mapa (igual a una zona)
-- `HUD_WIDTH` = 220: Ancho del panel de información
-- `FPS` = 30: Cuadros por segundo
-- `FRAME_DELAY_MS` = 33: `1000 / FPS`
-- `SERVER_TICK_MS` = 50: Cada cuánto llega un `STATE_UPDATE` (para interpolar)
-- `ANIMAL_SIZE` = 32: Tamaño en píxeles del dibujo de un animal
-- `CUP_SIZE` / `FLAG_SIZE` = 20 / 36: Tamaño de café y bandera
-- `CLICK_RADIUS` = 18: Qué tan cerca hay que hacer clic para "tocar" un animal
-- `ENERGY_BAR_WIDTH` / `ENERGY_BAR_HEIGHT` = 30 / 4: Barra de energía
-- `MAX_ENERGY` = 20: Para calcular qué tan llena va la barra
-- `PATH_WIDTH` = 14: Grosor de los caminos
-- `MINIMAP_CELL` = 40: Tamaño de cada zona en el minimapa
-- `MAX_EVENTS_SHOWN` = 5: Cuántos eventos se muestran en el HUD
-- Colores = `SELECTION_COLOR`, `PATH_COLOR`, `MY_COLOR`, `ENEMY_COLOR`, `BOT_COLOR`: Colores del dibujo
-- Rutas = `IMAGES_FOLDER = "/images/"`: Dónde están los SVG
-
-#### `Interpolator` (métodos *static*)
-Calcula posiciones intermedias para que el movimiento se vea suave.
 ```
-+ lerp(double from, double to, double t): double     (static)   // from + (to - from) * t
-+ progress(long now, long lastUpdate, long interval): double (static)  // t entre 0 y 1
+src/main/java/com/jungleattack/client/
+├── util/        ClientConstants, Position, Images
+├── protocol/    MessageType, Message           (copia del servidor)
+├── network/     ServerConnection
+├── model/       ScreenState, ModelObserver, GameModel, ClientAnimal, ClientItem, Species
+├── controller/  ClientController, MouseController
+└── view/        MainWindow, MenuPanel, SelectionPanel, GamePanel
 ```
+
+Son **18 clases**. Las pruebas van en `src/test/java` con los mismos paquetes.
 
 ---
 
-### 6.2 Paquete `protocol`
+## 5. Clases
 
-**Clase principal para tests:** `MessageParser`
+Notación: `+` público, `-` privado, `#` protegido.
 
-Es una **copia igual** del paquete `protocol` del servidor: `MessageType`, `ErrorCode`, `Message`, `MessageParser` y todas las clases de datos (`CreateMatchRequest`, `StateUpdateData`, `AnimalInfo`, `MapData`, etc.).
-Si se cambia algo en uno, **hay que cambiarlo en el otro**. Elegimos copiarlo en lugar de hacer una librería compartida porque es más sencillo para dos repositorios.
+### 5.1 `util`
 
----
+**`ClientConstants`** (clase final, todo `static`, constructor privado)
 
-### 6.3 Paquete `network`
+- **Red:** `DEFAULT_HOST = "localhost"`, `SERVER_PORT = 5000`
+- **Ventana:** `WINDOW_TITLE = "Jungle Attack"`, `ZONE_WIDTH = 800`, `ZONE_HEIGHT = 600`, `HUD_WIDTH = 220`
+- **Dibujo:** `FPS = 30`, `FRAME_MS = 33`, `ANIMAL_SIZE = 32`, `ITEM_SIZE = 24`, `PATH_WIDTH = 14`, `MINIMAP_CELL = 40`
+- **Barra de energía:** `ENERGY_BAR_WIDTH = 30`, `MAX_ENERGY = 20`
+- **Mouse:** `CLICK_RADIUS = 18`, `MIN_DRAG = 5` (si el mouse se movió menos de eso, cuenta como un clic y no como un arrastre)
+- **Eventos:** `MAX_EVENTS = 5`
+- **Colores:** `MY_COLOR`, `ENEMY_COLOR`, `BOT_COLOR`, `SELECTION_COLOR`, `PATH_COLOR`
+- **Imágenes:** `IMAGE_FILES` (la lista de los archivos SVG)
 
-**Clase principal para tests:** `ServerConnection`
+**`Position`**: la misma clase mutable del servidor (`x`, `y`, `distanceTo`, `moveTowards`).
 
-#### `MessageSender` (**interfaz**)
+**`Images`**: carga cada SVG **una sola vez** al iniciar el programa y lo guarda en un mapa, para no leer el archivo en cada cuadro.
 ```
-+ send(MessageType type, Object payload): void
+- static Map<String, BufferedImage> images
++ static loadAll()                     // al iniciar: lee cada archivo de IMAGE_FILES con JSVG
++ static get(String fileName): BufferedImage
 ```
-El controlador usa esta interfaz para mandar mensajes. En los tests usamos un sender falso que guarda los mensajes en una lista.
 
-#### `MessageReceiver` (**interfaz**)
-```
-+ onMessage(Message message): void
-+ onDisconnected(): void
-```
-La implementa el `ClientController`. Así `ServerConnection` no necesita saber nada del controlador.
+### 5.2 `protocol`
 
-#### `ServerConnection` (implementa `MessageSender` y `Runnable`)
+**`MessageType`** y **`Message`**: son **copias iguales** de las del servidor. Si se cambia algo en un repositorio, hay que cambiarlo también en el otro.
+
+### 5.3 `network`
+
+**`ServerConnection`** (implementa `Runnable`)
 ```
 - Socket socket
 - BufferedReader in
 - PrintWriter out
-- MessageReceiver receiver
-+ ServerConnection(String host, int port, MessageReceiver receiver)   // lanza IOException
-+ ServerConnection(BufferedReader in, PrintWriter out, MessageReceiver receiver)  // para tests
-+ startListening(): void             // crea el hilo de red
-+ run(): void                        // lee línea por línea y llama receiver.onMessage(...)
-+ send(MessageType type, Object payload): void   // synchronized
-+ close(): void
+- ClientController controller
++ ServerConnection(String host, int port, ClientController controller)       // lanza IOException
++ ServerConnection(BufferedReader in, PrintWriter out, ClientController c)   // para tests
++ start()                      // crea el hilo de red
++ run()                        // lee cada línea y llama a controller.onMessage(...)
++ send(Message message)        // synchronized
++ close()
 ```
 
----
+### 5.4 `model`
 
-### 6.4 Paquete `model`
+**`ScreenState`** (enum): `MENU`, `SELECTING`, `PLAYING`
 
-**Clase principal para tests:** `GameModel`
+**`Species`** (enum): la misma del servidor, con su nombre y su archivo de imagen.
 
-#### `ScreenState` (enum)
-`MENU`, `WAITING`, `SELECTING`, `PLAYING`, `GAME_OVER`
+**`ModelObserver`** (interfaz): `modelChanged()`
 
-#### `ModelObserver` (**interfaz**)
+**`ClientAnimal`**: un animal tal como lo conoce el cliente.
 ```
-+ modelChanged(): void
+- int id
+- Species species
+- Position position
+- int energy
+- boolean mine, bot
+- double speed
+- List<Position> route
++ moveStep(double seconds)      // el mismo cálculo que Animal.moveStep del servidor
++ getters
 ```
 
-#### `GameModel` (el **sujeto** del Observer)
-Guarda todo lo que el cliente sabe de la partida. **No tiene lógica del juego**, solo datos.
+**`ClientItem`**: un café o una bandera. Tiene `id`, `position` e `imageFile`.
+
+**`GameModel`**: todo lo que el cliente sabe de la partida. Es el **sujeto** del Observer.
 ```
 - List<ModelObserver> observers
 - ScreenState screen
-- String nickname
-- String matchCode
-- String opponentNickname
+- String nickname, matchCode, opponent
 - List<Species> availableSpecies
-- Species mySpecies
-- Species opponentSpecies
-- MapData map
-- StateUpdateData currentState
-- StateUpdateData previousState
-- long currentStateTime              // cuándo llegó currentState
-- Selection selection
-- GameOverData gameOver
-- String lastError
-
-+ addObserver(ModelObserver o): void
-+ removeObserver(ModelObserver o): void
-- notifyObservers(): void
-
-+ setScreen(ScreenState s): void
-+ setMatchCode(String code), setOpponentNickname(String nickname)
-+ setSpeciesSelection(AnimalSelectionData data): void
-+ startGame(GameStartedData data): void
-+ applyStateUpdate(StateUpdateData data, long now): void
-      // guarda la anterior y la nueva, y quita de la selección los animales que murieron
-+ setGameOver(GameOverData data): void
-+ setError(String message): void
-+ reset(): void                     // volver al menú
-
-+ findAnimalAt(double worldX, double worldY): AnimalInfo   // animal más cercano al clic dentro de CLICK_RADIUS
-+ getMyAnimalsInside(double x1, double y1, double x2, double y2): List<AnimalInfo>
-+ getInterpolatedX(AnimalInfo a, long now): double
-+ getInterpolatedY(AnimalInfo a, long now): double
-+ getSelection(): Selection
-+ getters de todo lo demás
-```
-
-#### `Selection`
-Los animales que el jugador tiene seleccionados.
-```
+- Species mySpecies, opponentSpecies
+- List<double[]> paths                       // líneas de los caminos (llegan en GAME_STARTED)
+- Map<Integer, ClientAnimal> animals
+- List<ClientItem> items
+- int viewedZoneId
+- List<Integer> myZones
+- int myDamage, myCups, myBotsKilled, seconds
+- List<String> events
 - Set<Integer> selectedIds
-+ selectOnly(int id): void
-+ toggle(int id): void
-+ selectAll(List<Integer> ids): void
-+ clear(): void
-+ contains(int id): boolean
-+ isEmpty(): boolean
-+ getIds(): List<Integer>
-+ keepOnly(Set<Integer> aliveIds): void     // quita los que ya murieron
+
++ addObserver(ModelObserver o)
+- notifyObservers()
++ setScreen(...), setMatchCode(...), setSpeciesSelection(...)
++ startGame(Message m)                       // guarda los caminos y la zona inicial
++ applyZoneUpdate(Message m)                 // reemplaza animales e items y quita de la selección a los que ya no están
++ moveAll(double seconds)                    // llama moveStep() a cada animal
++ findAnimalAt(double x, double y): ClientAnimal    // el más cercano al clic, dentro de CLICK_RADIUS
++ selectOnly(int id), selectInside(double x1, double y1, double x2, double y2), clearSelection()
++ getZoneMinX(), getZoneMinY()               // la esquina de la zona que se está viendo
++ reset()                                    // para volver al menú
++ getters
 ```
 
----
+### 5.5 `controller`
 
-### 6.5 Paquete `controller`
-
-**Clase principal para tests:** `ClientController`
-
-#### `ClientController` (implementa `MessageReceiver`)
-Es el puente entre la red, el modelo y lo que hace el jugador.
+**`ClientController`**: el puente entre la red, el modelo y lo que hace el jugador.
 ```
 - GameModel model
-- MessageSender sender
+- ServerConnection connection
 
-// Lo que hace el jugador (lo llaman las vistas y el MouseController)
-+ connect(String host): void          // crea ServerConnection
-+ createMatch(String nickname): void
-+ joinMatch(String nickname, String code): void
-+ selectSpecies(Species species): void
-+ moveSelectedTo(double worldX, double worldY): void    // no manda nada si no hay selección
-+ attack(int targetId): void                            // no manda nada si no hay selección
-+ viewZone(int zoneId): void
-+ backToMenu(): void
+// Acciones del jugador (las llaman las vistas y el MouseController)
++ connect(String host)
++ createMatch(String nickname), joinMatch(String nickname, String code)
++ selectSpecies(Species s)
++ moveSelectedTo(double x, double y)    // si no hay nada seleccionado, no manda nada
++ attack(int targetId)                  // si no hay nada seleccionado, no manda nada
++ viewZone(int zoneId)
 
 // Lo que llega del servidor
-+ onMessage(Message message): void    // hilo de red: usa SwingUtilities.invokeLater(() -> handleMessage(message))
-+ onDisconnected(): void
-+ handleMessage(Message message): void   // switch por tipo y actualiza el modelo (público para tests)
++ onMessage(Message m)                  // se llama desde el hilo de red: SwingUtilities.invokeLater(() -> handleMessage(m))
++ onDisconnected()
++ handleMessage(Message m)              // un switch según el tipo de mensaje (ver 6.2)
 ```
 
-#### `MouseController` (hereda de `MouseAdapter`)
-Convierte los eventos del mouse sobre el mapa en acciones del controlador (ver la sección 2).
+**`MouseController`** (hereda de `MouseAdapter`): convierte los eventos del mouse en acciones del controlador.
 ```
 - GameModel model
 - ClientController controller
-- Camera camera
-- Point dragStart                    // dónde empezó el arrastre
-- Point dragEnd
-+ mousePressed(MouseEvent e): void
-+ mouseDragged(MouseEvent e): void
-+ mouseReleased(MouseEvent e): void
-+ getSelectionRectangle(): Rectangle // para que GamePanel dibuje el rectángulo (o null)
-- handleLeftClick(double worldX, double worldY, boolean shift): void
-- handleRightClick(double worldX, double worldY): void
+- Point dragStart, dragEnd
++ mousePressed(MouseEvent e), mouseDragged(MouseEvent e), mouseReleased(MouseEvent e)
++ getDragRectangle(): Rectangle     // para que GamePanel lo dibuje (null si no se está arrastrando)
 ```
+Para pasar un punto de la pantalla al mapa: `x del mapa = x en pantalla + model.getZoneMinX()` (y lo mismo para `y`). Si el clic cae en el minimapa, se calcula qué zona es y se llama a `viewZone()`.
 
----
+### 5.6 `view`
 
-### 6.6 Paquete `view`
+**`MainWindow`** (hereda de `JFrame`, implementa `ModelObserver`)
+- Tiene el `main`: carga las imágenes, crea el modelo, el controlador y la ventana.
+- Usa un `CardLayout` para mostrar `MenuPanel`, `SelectionPanel` o `GamePanel` según `model.getScreen()`.
+- Muestra los errores y el resumen final con `JOptionPane`.
 
-**Clase principal para tests:** `Camera`
+**`MenuPanel`** (hereda de `JPanel`, implementa `ModelObserver`)
+- Tiene los campos y botones del menú.
+- Cuando hay código de partida, muestra "Código: A7K2. Esperando al otro jugador...".
 
-#### `Camera`
-Convierte coordenadas de la pantalla a coordenadas del mapa y al revés. El mapa completo es grande (4 x 3 zonas) y la pantalla solo muestra una zona.
-```
-- int zoneId
-- int columns
-+ setZone(int zoneId): void
-+ getZoneId(): int
-+ toWorldX(int screenX): double      // zoneMinX + screenX
-+ toWorldY(int screenY): double
-+ toScreenX(double worldX): int      // worldX - zoneMinX
-+ toScreenY(double worldY): int
-```
+**`SelectionPanel`** (hereda de `JPanel`, implementa `ModelObserver`)
+- Tiene los 7 botones de especie.
+- En `modelChanged()` deshabilita las especies que ya no están disponibles y muestra lo que escogió cada jugador.
 
-#### `ImageCache` (**Singleton**)
-Carga cada SVG **una sola vez** al iniciar, lo convierte a `BufferedImage` y lo guarda.
-```
-- static ImageCache instance                      (static)
-- Map<String, BufferedImage> images
-- ImageCache()                                    // privado
-+ getInstance(): ImageCache                       (static)
-+ loadAll(): void                                 // carga todo al arrancar
-+ get(String name): BufferedImage
-+ getSpecies(Species s): BufferedImage
-- loadSvg(String path, int size): BufferedImage   // usa JSVG
-```
-
-#### `MainWindow` (hereda de `JFrame`, implementa `ModelObserver`)
-La ventana. Usa un `CardLayout` para cambiar de pantalla según `model.getScreen()`.
-```
-- CardLayout cards
-- JPanel container
-- GameModel model
-+ MainWindow(GameModel model, ClientController controller)
-+ modelChanged(): void               // muestra la pantalla que toca y los errores con JOptionPane
-```
-
-#### `BaseScreen` (clase **abstracta**, hereda de `JPanel`, implementa `ModelObserver`)
-Lo que comparten todas las pantallas.
-```
-# GameModel model
-# ClientController controller
-+ BaseScreen(GameModel model, ClientController controller)  // se registra como observer
-+ modelChanged(): void               // llama refresh() en el hilo de Swing
-# abstract refresh(): void           // cada pantalla se actualiza a su manera
-```
-
-#### Pantallas (todas heredan de `BaseScreen`)
-- **`MenuScreen`**: Limpia los campos al volver al menú.
-- **`WaitingScreen`**: Muestra el código de la partida.
-- **`SelectionScreen`**: Habilita o deshabilita los botones de especie y muestra lo que escogió cada uno.
-- **`GameScreen`**: Contiene el `GamePanel` y el `HudPanel` y los actualiza.
-- **`GameOverScreen`**: Muestra el ganador y llena la tabla del resumen.
-
-#### `GamePanel` (hereda de `JPanel`)
-Dibuja la zona que se está viendo. Un `javax.swing.Timer` llama `repaint()` 30 veces por segundo.
+**`GamePanel`** (hereda de `JPanel`, implementa `ModelObserver`)
+- Un `javax.swing.Timer` lo llama cada 33 ms: hace `model.moveAll(seconds)` y luego `repaint()`.
 ```
 - GameModel model
-- Camera camera
 - MouseController mouse
 - Timer timer
-+ GamePanel(GameModel model, ClientController controller)
-+ start(), stop(): void              // arranca y para el timer
-# paintComponent(Graphics g): void
-      // 1. fondo  2. caminos  3. sprites  4. rectángulo de selección
-- drawBackground(Graphics2D g)
+- long lastFrameTime
+# paintComponent(Graphics g)    // fondo → caminos → items → animales → rectángulo de selección → panel de datos
 - drawPaths(Graphics2D g)
-- buildSprites(long now): List<Sprite>
+- drawItem(Graphics2D g, ClientItem item)
+- drawAnimal(Graphics2D g, ClientAnimal a)    // imagen, barra de energía, borde de color y círculo si está seleccionado
+- drawHud(Graphics2D g)
+- drawMiniMap(Graphics2D g)
 ```
-
-#### `Sprite` (clase **abstracta**)
-Algo que se dibuja en el mapa.
-```
-# double x
-# double y
-+ Sprite(double x, double y)
-+ abstract draw(Graphics2D g, Camera camera): void
-```
-
-- **`AnimalSprite`**: La imagen de la especie, la barra de energía, un círculo si está seleccionado y un borde de color (mío, rival o bot).
-- **`CupSprite`**: Un café.
-- **`FlagSprite`**: La bandera (la mía o la del rival).
-
-**Aquí está el polimorfismo:** `GamePanel` arma una `List<Sprite>` y solo hace `sprite.draw(g, camera)` sin saber si es animal, café o bandera.
-
-#### `HudPanel` (hereda de `JPanel`)
-El panel de la derecha.
-```
-- GameModel model
-- ClientController controller
-- MiniMapPanel miniMap
-+ refresh(): void
-```
-Muestra: mi especie, daño actual del pack, cafés tomados, bots eliminados, animales vivos, cuántos tengo seleccionados, tiempo de la partida y los últimos eventos.
-
-#### `MiniMapPanel` (hereda de `JPanel`)
-Una cuadrícula de 4 x 3 cuadritos, uno por zona.
-- La zona que estoy viendo sale con borde grueso.
-- Las zonas donde tengo animales vivos salen de color y se pueden **cliquear** para cambiar de zona.
-- Las demás salen grises.
+Para dibujar un item o un animal se usa `Images.get(...)` con su archivo de imagen. No importa si es un café, una bandera o una especie.
 
 ---
 
-## 7. Resumen de POO y patrones
+## 6. Funcionamiento
 
-### `static`
-- `ClientConstants`: todas sus constantes.
-- `Interpolator`: sus métodos.
-- `ImageCache.instance` y `ImageCache.getInstance()`.
-- `MessageParser`: el `Gson` y sus métodos.
+### 6.1 Hilos
 
-### Herencia
-- `Sprite` → `AnimalSprite`, `CupSprite`, `FlagSprite`
-- `BaseScreen` (hereda de `JPanel`) → `MenuScreen`, `WaitingScreen`, `SelectionScreen`, `GameScreen`, `GameOverScreen`
-- `JFrame` → `MainWindow`
-- `JPanel` → `GamePanel`, `HudPanel`, `MiniMapPanel`
-- `MouseAdapter` → `MouseController`
+- **Hilo principal:** arranca el programa y crea la ventana con `SwingUtilities.invokeLater`.
+- **Hilo de red:** `ServerConnection.run()` lee los mensajes del servidor. **Nunca toca Swing.**
+- **Hilo de Swing (EDT):** dibuja, atiende el mouse, recibe el `Timer` y actualiza el modelo.
 
-### Interfaces
-- `ModelObserver` (la implementan `MainWindow` y todas las pantallas)
-- `MessageSender` (la implementa `ServerConnection`)
-- `MessageReceiver` (la implementa `ClientController`)
-- `Runnable` (la implementa `ServerConnection`)
+Cuando llega un mensaje, el hilo de red lo pasa con `SwingUtilities.invokeLater(...)`. Así el modelo solo se cambia desde el hilo de Swing y no hace falta `synchronized` en el modelo.
 
-### Polimorfismo
-- `Sprite.draw(...)`: cada sprite se dibuja a su manera.
-- `BaseScreen.refresh()`: cada pantalla se actualiza a su manera.
-- `ModelObserver.modelChanged()`: el modelo avisa a todos sin saber qué son.
+### 6.2 Qué hace con cada mensaje (`ClientController.handleMessage`)
 
-### Patrones de diseño
+- `MATCH_CREATED`: guarda el código. El menú muestra "Esperando...".
+- `MATCH_JOINED`: guarda el nombre del rival y pasa a `SELECTING`.
+- `ANIMAL_SELECTION`: actualiza las especies disponibles y lo que escogió cada jugador.
+- `GAME_STARTED`: guarda los caminos y la zona inicial, y pasa a `PLAYING`.
+- `ZONE_UPDATE`: `model.applyZoneUpdate(...)`
+- `GAME_OVER`: muestra el resumen y vuelve al `MENU`.
+- `ERROR`: muestra el mensaje en un `JOptionPane`.
+- Desconexión: muestra "Se perdió la conexión con el servidor" y vuelve al menú.
 
-- **MVC**
-  - Clases: Modelo: `GameModel`, `Selection`. Vista: `MainWindow`, pantallas, `GamePanel`, `HudPanel`, sprites. Controlador: `ClientController`, `MouseController`
-  - Por qué: Separa los datos, el dibujo y el manejo del mouse. La vista no tiene lógica.
-- **Observer**
-  - Clases: Sujeto: `GameModel`. Observador: `ModelObserver`. Observadores concretos: `MainWindow`, `BaseScreen` y sus hijas
-  - Por qué: Cuando llega un mensaje y cambia el modelo, las vistas se enteran solas.
-- **Singleton**
-  - Clases: `ImageCache`
-  - Por qué: Las imágenes se cargan una sola vez y todo el programa usa las mismas.
+### 6.3 Movimiento en pantalla
+
+1. Llega un `ZONE_UPDATE`. Cada animal trae su posición, su velocidad y la ruta que le falta.
+2. Cada 33 ms, `GamePanel` llama a `model.moveAll(seconds)`, y cada animal avanza `speed * seconds` por su ruta.
+3. Cuando llega el siguiente `ZONE_UPDATE`, las posiciones se reemplazan por las del servidor. Si hubo alguna diferencia, se corrige ahí, y como el servidor manda un chequeo al menos cada segundo, la diferencia nunca dura más que eso.
+
+### 6.4 Selección con rectángulo
+
+1. En `mousePressed` se guarda el punto donde empezó.
+2. En `mouseDragged` se guarda el punto actual, y `GamePanel` dibuja el rectángulo.
+3. En `mouseReleased`:
+   - si el mouse se movió menos de `MIN_DRAG`, se trata como un clic normal;
+   - si no, se llama a `model.selectInside(...)`.
 
 ---
 
-## 8. Hilos
+## 7. POO y patrones
 
-- **Hilo principal**: Arranca el programa y crea la ventana con `SwingUtilities.invokeLater`.
-- **Hilo de red**: `ServerConnection.run()` lee los mensajes del servidor. **Nunca toca Swing directamente.**
-- **Hilo de Swing (EDT)**: Dibuja, atiende el mouse y actualiza el modelo.
-
-Cuando llega un mensaje, el hilo de red llama `controller.onMessage(...)`, y este hace:
-```java
-SwingUtilities.invokeLater(() -> handleMessage(message));
-```
-Así el modelo **solo se cambia en el hilo de Swing** y no hace falta `synchronized` en el modelo.
-
----
-
-## 9. Algoritmos del cliente
-
-### 9.1 Interpolación (movimiento suave)
-El servidor manda la posición 20 veces por segundo y nosotros dibujamos 30 veces por segundo. Si dibujáramos la última posición tal cual, el animal se movería "a saltitos".
-Por eso dibujamos un poquito atrasados, entre la foto anterior y la actual:
-```
-t = (now - currentStateTime) / SERVER_TICK_MS     // se limita entre 0 y 1
-x = lerp(xAnterior, xActual, t)
-y = lerp(yAnterior, yActual, t)
-```
-Si el animal no estaba en la foto anterior (por ejemplo, acaba de entrar a la zona), se dibuja en su posición actual.
-
-### 9.2 Clic sobre un animal (`GameModel.findAnimalAt`)
-1. Convertir el clic a coordenadas del mapa con la `Camera`.
-2. Recorrer los animales visibles y calcular la distancia al clic.
-3. Devolver el más cercano si está a menos de `CLICK_RADIUS`. Si no, devolver `null`.
-
-### 9.3 Selección con rectángulo
-1. En `mousePressed` se guarda el punto inicial.
-2. En `mouseDragged` se guarda el punto final y `GamePanel` dibuja el rectángulo.
-3. En `mouseReleased` se piden al modelo **mis** animales que quedan adentro y se seleccionan.
-4. Si el rectángulo es muy pequeño (casi no se movió el mouse), se trata como un clic normal.
+- **`static`:** las constantes de `ClientConstants`, los métodos de `Images` y `Message.fromJson()`.
+- **Herencia:** `MainWindow` hereda de `JFrame`; `MenuPanel`, `SelectionPanel` y `GamePanel` heredan de `JPanel`; `MouseController` hereda de `MouseAdapter`.
+- **Interfaces:** `ModelObserver` (la implementan `MainWindow` y los tres paneles) y `Runnable` (la implementa `ServerConnection`).
+- **Polimorfismo:**
+  - El modelo llama a `modelChanged()` en todos sus observadores sin saber si son la ventana o un panel. Cada uno reacciona a su manera.
+  - `drawItem()` dibuja cualquier item con su `imageFile`, sin preguntar qué tipo es.
+- **Patrones:**
+  - **MVC:**
+    - Modelo: `GameModel`, `ClientAnimal` y `ClientItem`.
+    - Vista: `MainWindow` y los paneles.
+    - Controlador: `ClientController` y `MouseController`.
+    - La vista no tiene lógica del juego.
+  - **Observer:** `GameModel` es el sujeto y `ModelObserver` es el observador. Cuando cambia el modelo, las vistas se enteran solas.
 
 ---
 
-## 10. Manejo de mensajes del servidor (`ClientController.handleMessage`)
+## 8. Pruebas (JUnit 5)
 
-- **`MATCH_CREATED`**: Guarda el código y pasa a la pantalla `WAITING`.
-- **`MATCH_JOINED`**: Guarda el nombre del rival y pasa a `SELECTING`.
-- **`ANIMAL_SELECTION`**: Actualiza las especies disponibles y lo que escogió cada uno.
-- **`GAME_STARTED`**: Guarda el mapa y mi zona, y pasa a `PLAYING`.
-- **`STATE_UPDATE`**: `model.applyStateUpdate(...)`
-- **`GAME_OVER`**: Guarda el resumen y pasa a `GAME_OVER`.
-- **`ERROR`**: Guarda el mensaje y la ventana lo muestra con `JOptionPane`.
-- **Desconexión**: Muestra "Se perdió la conexión con el servidor" y vuelve al menú.
+Hay al menos un test por paquete, todos sin red real y sin abrir ventanas:
 
----
-
-## 11. Plan de pruebas (JUnit 5)
-
-Todo se prueba **sin ventana y sin red real**.
-
-- `InterpolatorTest` (paquete `util`): `lerp` en 0, 0.5 y 1, y que `progress` nunca pasa de 0 a 1.
-- `MessageParserTest` (paquete `protocol`): Ida y vuelta (round trip) de cada tipo de mensaje.
-- `ServerConnectionTest` (paquete `network`): Con un `StringWriter`: `send` escribe una línea JSON correcta. Con un `StringReader`: cada línea llega a `onMessage`.
-- `GameModelTest` (paquete `model`): Los observers reciben el aviso, `applyStateUpdate` guarda la anterior y la nueva, `findAnimalAt` encuentra el animal correcto, los animales muertos salen de la selección.
-- `SelectionTest` (paquete `model`): `selectOnly`, `toggle`, `clear`, `keepOnly`.
-- `ClientControllerTest` (paquete `controller`): Con un sender falso: `moveSelectedTo` manda `MOVE_ANIMALS` con los ids correctos, no manda nada si no hay selección, y `handleMessage(MATCH_CREATED)` cambia la pantalla a `WAITING`.
-- `CameraTest` (paquete `view`): Convertir de pantalla a mapa y de vuelta da el mismo punto en distintas zonas.
+- **`PositionTest`** (util): la distancia y que `moveTowards` no se pase del destino.
+- **`MessageTest`** (protocol): ida y vuelta (`toJson` → `fromJson`) de cada tipo de mensaje.
+- **`ServerConnectionTest`** (network):
+  - con un `StringWriter`, que `send` escribe una línea JSON correcta;
+  - con un `StringReader`, que cada línea llega al controlador.
+- **`ClientAnimalTest`** (model): que `moveStep` avanza a velocidad constante y se detiene al final de la ruta.
+- **`GameModelTest`** (model):
+  - que los observadores reciben el aviso;
+  - que `applyZoneUpdate` reemplaza los animales;
+  - que `findAnimalAt` encuentra el animal correcto;
+  - que los animales que ya no están salen de la selección.
+- **`ClientControllerTest`** (controller):
+  - que `moveSelectedTo` manda `MOVE_ANIMALS` con los ids correctos;
+  - que no manda nada si no hay selección;
+  - que `MATCH_JOINED` cambia la pantalla a `SELECTING`.
+- **`SelectionPanelTest`** (view): que al aplicar un `ANIMAL_SELECTION`, el botón de la especie que ya tomó el rival queda deshabilitado. Se crea el panel sin mostrar la ventana.
 
 GitHub Actions corre `mvn test` en cada push.
 
 ---
 
-## 12. Diagrama de clases (Mermaid)
-
-Las clases del paquete `protocol` (copia del servidor) y las pantallas concretas no salen en el diagrama para que no quede tan grande.
+## 9. Diagrama de clases
 
 ```mermaid
 classDiagram
     direction TB
 
-    class ClientConstants {
-        <<utility>>
-        +int FPS$
-        +int ANIMAL_SIZE$
-        +int CLICK_RADIUS$
-    }
-    class Interpolator {
-        +lerp(double from, double to, double t)$ double
-        +progress(long now, long last, long interval)$ double
-    }
-
-    class MessageSender {
-        <<interface>>
-        +send(MessageType type, Object payload) void
-    }
-    class MessageReceiver {
-        <<interface>>
-        +onMessage(Message message) void
-        +onDisconnected() void
-    }
-    class ServerConnection {
-        -Socket socket
-        -BufferedReader in
-        -PrintWriter out
-        +startListening() void
-        +run() void
-        +send(MessageType type, Object payload) void
-        +close() void
-    }
-
-    class ScreenState {
-        <<enumeration>>
-        MENU
-        WAITING
-        SELECTING
-        PLAYING
-        GAME_OVER
-    }
     class ModelObserver {
         <<interface>>
         +modelChanged() void
     }
     class GameModel {
-        -List~ModelObserver~ observers
         -ScreenState screen
-        -StateUpdateData currentState
-        -StateUpdateData previousState
+        -Map~Integer, ClientAnimal~ animals
+        -List~ClientItem~ items
+        -Set~Integer~ selectedIds
         +addObserver(ModelObserver o) void
         -notifyObservers() void
-        +applyStateUpdate(StateUpdateData data, long now) void
-        +findAnimalAt(double x, double y) AnimalInfo
-        +getInterpolatedX(AnimalInfo a, long now) double
+        +applyZoneUpdate(Message m) void
+        +moveAll(double seconds) void
+        +findAnimalAt(double x, double y) ClientAnimal
     }
-    class Selection {
-        -Set~Integer~ selectedIds
-        +selectOnly(int id) void
-        +toggle(int id) void
-        +clear() void
-        +keepOnly(Set~Integer~ alive) void
+    class ClientAnimal {
+        -int id
+        -Position position
+        -int energy
+        -List~Position~ route
+        +moveStep(double seconds) void
+    }
+    class ClientItem {
+        -Position position
+        -String imageFile
+    }
+    class ScreenState {
+        <<enumeration>>
+        MENU
+        SELECTING
+        PLAYING
     }
 
     class ClientController {
-        -GameModel model
-        -MessageSender sender
         +createMatch(String nickname) void
         +joinMatch(String nickname, String code) void
         +selectSpecies(Species s) void
         +moveSelectedTo(double x, double y) void
         +attack(int targetId) void
         +viewZone(int zoneId) void
-        +onMessage(Message message) void
-        +handleMessage(Message message) void
+        +handleMessage(Message m) void
     }
     class MouseController {
         -Point dragStart
         -Point dragEnd
         +mousePressed(MouseEvent e) void
-        +mouseDragged(MouseEvent e) void
         +mouseReleased(MouseEvent e) void
     }
+    class ServerConnection {
+        +run() void
+        +send(Message m) void
+    }
 
-    class Camera {
-        -int zoneId
-        +toWorldX(int screenX) double
-        +toScreenX(double worldX) int
-    }
-    class ImageCache {
-        <<Singleton>>
-        -ImageCache instance$
-        -Map~String, BufferedImage~ images
-        +getInstance()$ ImageCache
-        +loadAll() void
-        +get(String name) BufferedImage
-    }
     class MainWindow {
         -CardLayout cards
         +modelChanged() void
     }
-    class BaseScreen {
-        <<abstract>>
-        #GameModel model
-        #ClientController controller
-        +modelChanged() void
-        #refresh()* void
-    }
-    class GameScreen
+    class MenuPanel
+    class SelectionPanel
     class GamePanel {
         -Timer timer
         #paintComponent(Graphics g) void
-        -buildSprites(long now) List~Sprite~
+        -drawAnimal(Graphics2D g, ClientAnimal a) void
+        -drawItem(Graphics2D g, ClientItem i) void
     }
-    class HudPanel {
-        +refresh() void
+    class Images {
+        +loadAll()$ void
+        +get(String fileName)$ BufferedImage
     }
-    class MiniMapPanel
-    class Sprite {
-        <<abstract>>
-        #double x
-        #double y
-        +draw(Graphics2D g, Camera camera)* void
-    }
-    class AnimalSprite {
-        -int energy
-        -boolean selected
-        +draw(Graphics2D g, Camera camera) void
-    }
-    class CupSprite {
-        +draw(Graphics2D g, Camera camera) void
-    }
-    class FlagSprite {
-        -boolean mine
-        +draw(Graphics2D g, Camera camera) void
+    class Message {
+        +toJson() String
+        +fromJson(String line)$ Message
     }
 
-    MessageSender <|.. ServerConnection
-    MessageReceiver <|.. ClientController
     ModelObserver <|.. MainWindow
-    ModelObserver <|.. BaseScreen
-    BaseScreen <|-- GameScreen
-    Sprite <|-- AnimalSprite
-    Sprite <|-- CupSprite
-    Sprite <|-- FlagSprite
+    ModelObserver <|.. MenuPanel
+    ModelObserver <|.. SelectionPanel
+    ModelObserver <|.. GamePanel
 
-    ServerConnection --> MessageReceiver : avisa
-    ClientController --> MessageSender : envía
-    ClientController --> GameModel : actualiza
-    GameModel "1" o-- "many" ModelObserver : notifica
-    GameModel *-- Selection
+    GameModel o-- ModelObserver : notifica
+    GameModel *-- ClientAnimal
+    GameModel *-- ClientItem
     GameModel --> ScreenState
+
+    ClientController --> GameModel : actualiza
+    ClientController --> ServerConnection : envía
+    ServerConnection --> ClientController : avisa
+    ServerConnection ..> Message
     MouseController --> ClientController
-    MouseController --> Camera
-    MainWindow --> GameModel
-    GameScreen *-- GamePanel
-    GameScreen *-- HudPanel
-    HudPanel *-- MiniMapPanel
-    GamePanel --> Camera
     GamePanel --> MouseController
-    GamePanel ..> Sprite : dibuja
-    AnimalSprite ..> ImageCache
-    CupSprite ..> ImageCache
-    FlagSprite ..> ImageCache
-    ClientController ..> Interpolator
-    GameModel ..> Interpolator
+    GamePanel --> GameModel : lee
+    GamePanel ..> Images
+    SelectionPanel ..> Images
+    MainWindow *-- MenuPanel
+    MainWindow *-- SelectionPanel
+    MainWindow *-- GamePanel
 ```
-
----
-
-## 13. Pendientes
-
-- [x] Escoger las 7 especies: jaguar, perezoso, mono congo, danta, tucán, rana calzonuda y pizote.
-- [ ] Hacer (o conseguir) los 7 SVG de las especies.
-- [ ] Hacer los SVG de café, banderas y fondo.
-- [ ] Revisar este spec con el profesor.
