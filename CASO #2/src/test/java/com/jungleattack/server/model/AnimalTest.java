@@ -172,4 +172,20 @@ class AnimalTest {
         PlayerAnimal a = new PlayerAnimal(2, playerPack, new Position(0, 0));
         assertTrue(bot.getSpeed() < a.getSpeed());
     }
+
+    @Test
+    void playerAnimalKeepsTheOrderWhileWalkingToTheTarget() {
+        PlayerAnimal a = new PlayerAnimal(1, playerPack, new Position(0, 0));
+        BotAnimal bot = new BotAnimal(2, botPack, new Position(200, 0));
+        a.setOrderedTarget(bot);
+        a.setRoute(List.of(new Position(180, 0)));
+
+        // Todavía está lejos, pero va caminando: no ataca y no olvida la orden
+        assertNull(a.tryAttack(new ArrayList<>(), 0));
+        assertSame(bot, a.getOrderedTarget());
+
+        a.moveStep(3);
+        a.tryAttack(List.of(bot), 1000);
+        assertEquals(8, bot.getEnergy());
+    }
 }

@@ -27,15 +27,23 @@ public class PlayerAnimal extends Animal {
 
     /**
      * Devuelve solo el objetivo ordenado.
-     * Si murió o se salió del rango, lo olvida y devuelve null.
+     * Si murió, lo olvida.
+     * Si está lejos y el animal todavía camina hacia él, guarda la orden para atacar al llegar.
+     * Si está lejos y el animal ya no camina, lo olvida.
      */
     @Override
     protected Animal chooseTarget(List<Animal> enemiesInRange) {
         if (orderedTarget == null) {
             return null;
         }
-        if (!orderedTarget.isAlive() || !isInRange(orderedTarget)) {
+        if (!orderedTarget.isAlive()) {
             orderedTarget = null;
+            return null;
+        }
+        if (!isInRange(orderedTarget)) {
+            if (!isMoving()) {
+                orderedTarget = null;
+            }
             return null;
         }
         return orderedTarget;

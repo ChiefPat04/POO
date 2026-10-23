@@ -67,6 +67,14 @@ public class BotPack extends Pack {
         return true;
     }
 
+    /**
+     * El pack espera BOT_WAIT_MS antes de volver a patrullar.
+     * Se llama mientras alguno de sus bots está peleando.
+     */
+    public void pauseFor(long now) {
+        nextMoveTime = now + GameConstants.BOT_WAIT_MS;
+    }
+
     public int getHomeZoneId() {
         return homeZoneId;
     }

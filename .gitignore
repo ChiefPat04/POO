@@ -2,6 +2,7 @@
 out/
 bin/
 *.class
+target/
 
 # VS Code
 .vscode/

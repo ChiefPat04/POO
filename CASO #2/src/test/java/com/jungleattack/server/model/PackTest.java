@@ -155,4 +155,16 @@ class PackTest {
         assertFalse(pack.updatePatrol(map, random, 50 + GameConstants.BOT_WAIT_MS - 1));
         assertTrue(pack.updatePatrol(map, random, 50 + GameConstants.BOT_WAIT_MS));
     }
+
+    @Test
+    void pauseForDelaysThePatrol() {
+        GameMap map = new GameMap();
+        Random random = new Random(1);
+        BotPack pack = new BotPack(Species.TAPIR, 5);
+        pack.createMembers(map.getZone(5).getCenter().getPosition(), 1, random);
+
+        pack.pauseFor(5000);
+        assertFalse(pack.updatePatrol(map, random, 5000 + GameConstants.BOT_WAIT_MS - 1));
+        assertTrue(pack.updatePatrol(map, random, 5000 + GameConstants.BOT_WAIT_MS));
+    }
 }

@@ -21,11 +21,25 @@ public class Player {
     private List<Integer> lastVisibleIds;
     private int botsKilled;
     private int cupsTaken;
+    private final List<String> pendingEvents;
 
     public Player(String nickname, MessageSender sender) {
         this.nickname = nickname;
         this.sender = sender;
         this.lastVisibleIds = new ArrayList<>();
+        this.pendingEvents = new ArrayList<>();
+    }
+
+    /** Guarda un evento para mandarlo en el próximo ZONE_UPDATE. */
+    public void addEvent(String text) {
+        pendingEvents.add(text);
+    }
+
+    /** Devuelve los eventos pendientes y vacía la lista, para no mandarlos dos veces. */
+    public List<String> takeEvents() {
+        List<String> copy = new ArrayList<>(pendingEvents);
+        pendingEvents.clear();
+        return copy;
     }
 
     /**

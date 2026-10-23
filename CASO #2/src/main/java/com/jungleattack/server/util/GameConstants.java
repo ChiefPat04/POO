@@ -70,4 +70,17 @@ public final class GameConstants {
     public static final String ERROR_SPECIES_TAKEN = "Esa especie ya la escogió el otro jugador";
     public static final String ERROR_NOT_PLAYING = "La partida no está en juego";
     public static final String ERROR_BAD_MESSAGE = "Mensaje no válido";
+
+    // Eventos (los textos cortos que llegan en ZONE_UPDATE)
+    public static final String EVENT_MY_CUP = "Tu pack tomó un café";
+    public static final String EVENT_RIVAL_CUP = "El rival tomó un café";
+    public static final String EVENT_BOT_KILLED = "Tu pack eliminó un bot";
+    public static final String EVENT_BONUS = "Bono: +1 de energía para tu pack";
+    public static final String EVENT_ANIMAL_LOST = "Perdiste un animal";
+    public static final String EVENT_ZONE_CHANGED = "Ya no tienes animales en esa zona";
+
+    // Motivos de fin de partida (GAME_OVER)
+    public static final String REASON_FLAG = "Tocó la bandera rival";
+    public static final String REASON_ELIMINATED = "Se murieron todos los animales del rival";
+    public static final String REASON_DISCONNECTED = "El rival se desconectó";
 }
