@@ -15,6 +15,7 @@ public class PlayerPack extends Pack {
         this.owner = owner;
     }
 
+    //LA FÁBRICA
     @Override
     protected Animal createAnimal(int id, Position position) {
         return new PlayerAnimal(id, this, position);

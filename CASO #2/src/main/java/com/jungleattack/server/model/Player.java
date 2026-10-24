@@ -61,7 +61,7 @@ public class Player {
         }
     }
 
-    // ----- Getters y setters -----
+    // Getters y setters 
 
     public String getNickname() {
         return nickname;
@@ -104,7 +104,7 @@ public class Player {
     }
 
     public void setLastVisibleIds(List<Integer> lastVisibleIds) {
-        this.lastVisibleIds = new ArrayList<>(lastVisibleIds);
+        this.lastVisibleIds = new ArrayList<>(lastVisibleIds); //Este guarda una copia de la lista, para que nadie la cambie desde afuera después.
     }
 
     public int getBotsKilled() {

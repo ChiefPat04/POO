@@ -32,7 +32,7 @@ public abstract class Pack {
             double offsetX = (random.nextDouble() * 2 - 1) * GameConstants.SPAWN_SPREAD;
             double offsetY = (random.nextDouble() * 2 - 1) * GameConstants.SPAWN_SPREAD;
             Position p = new Position(center.getX() + offsetX, center.getY() + offsetY);
-            members.add(createAnimal(firstId + i, p));
+            members.add(createAnimal(firstId + i, p)); //AQUÍ ESTÁ LA FÁBRICA
         }
     }
 
