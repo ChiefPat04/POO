@@ -30,12 +30,12 @@ public class Player {
         this.pendingEvents = new ArrayList<>();
     }
 
-    /** Guarda un evento para mandarlo en el próximo ZONE_UPDATE. */
+    // Guarda un evento para mandarlo en el próximo ZONE_UPDATE. 
     public void addEvent(String text) {
         pendingEvents.add(text);
     }
 
-    /** Devuelve los eventos pendientes y vacía la lista, para no mandarlos dos veces. */
+    // Devuelve los eventos pendientes y vacía la lista, para no mandarlos dos veces. 
     public List<String> takeEvents() {
         List<String> copy = new ArrayList<>(pendingEvents);
         pendingEvents.clear();

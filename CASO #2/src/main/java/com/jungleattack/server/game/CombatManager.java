@@ -40,7 +40,7 @@ public class CombatManager {
         return anyAttack;
     }
 
-    /** Los animales vivos, de otro pack, que están dentro del rango del atacante. */
+    // Los animales vivos, de otro pack, que están dentro del rango del atacante. 
     public List<Animal> findEnemiesInRange(Animal attacker, List<Animal> all) {
         List<Animal> enemies = new ArrayList<>();
         for (Animal other : all) {
@@ -51,7 +51,7 @@ public class CombatManager {
         return enemies;
     }
 
-    /** Si un animal de jugador mató a un bot, cuenta la baja y da el bono cada 2 bots. */
+    // Si un animal de jugador mató a un bot, cuenta la baja y da el bono cada 2 bots.
     private void registerKill(Animal attacker, Animal victim) {
         if (attacker.isBot() || !victim.isBot()) {
             return;

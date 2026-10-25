@@ -67,12 +67,12 @@ public abstract class Pack {
         return dead;
     }
 
-    /** true si todos sus animales murieron. */
+    // true si todos sus animales murieron. 
     public boolean isEliminated() {
         return getAliveMembers().isEmpty();
     }
 
-    /** Busca un animal del pack por su id. Devuelve null si no está. */
+    // Busca un animal del pack por su id. Devuelve null si no está. 
     public Animal findAnimal(int id) {
         for (Animal a : members) {
             if (a.getId() == id) {
@@ -90,7 +90,7 @@ public abstract class Pack {
         return damage;
     }
 
-    /** Una copia de la lista, para que nadie la cambie desde afuera. */
+    // Una copia de la lista, para que nadie la cambie desde afuera. 
     public List<Animal> getMembers() {
         return new ArrayList<>(members);
     }

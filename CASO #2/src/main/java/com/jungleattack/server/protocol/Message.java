@@ -29,7 +29,7 @@ public class Message {
         this.payload = payload;
     }
 
-    /** Agrega un dato (número, texto, booleano o lista). Devuelve "this" para encadenar. */
+    // Agrega un dato (número, texto, booleano o lista). Devuelve "this" para encadenar. 
     public Message put(String key, Object value) {
         if (value instanceof Number) {
             payload.addProperty(key, (Number) value);
@@ -80,7 +80,7 @@ public class Message {
         return payload;
     }
 
-    /** El mensaje como JSON en una sola línea. */
+    // El mensaje como JSON en una sola línea. 
     public String toJson() {
         JsonObject root = new JsonObject();
         root.addProperty("type", type.name());
@@ -88,7 +88,7 @@ public class Message {
         return gson.toJson(root);
     }
 
-    /** Convierte una línea JSON en un Message. */
+    // Convierte una línea JSON en un Message. 
     public static Message fromJson(String line) {
         JsonObject root = JsonParser.parseString(line).getAsJsonObject();
         MessageType type = MessageType.valueOf(root.get("type").getAsString());

@@ -62,7 +62,7 @@ public class GameSession {
         this.nextId = 1;
     }
 
-    // ----- Sala de espera -----
+    // Sala de espera 
 
     public synchronized void addSecondPlayer(Player p) throws GameException {
         if (player2 != null || state != MatchState.WAITING_FOR_PLAYER) {
@@ -91,7 +91,35 @@ public class GameSession {
         p.setSpecies(species);
     }
 
-    // ----- Inicio -----
+    /** Manda MATCH_JOINED a los dos: cada uno ve el nombre del otro. */
+    public synchronized void announceJoined() {
+        player1.send(new Message(MessageType.MATCH_JOINED)
+                .put("code", code).put("opponent", player2.getNickname()));
+        player2.send(new Message(MessageType.MATCH_JOINED)
+                .put("code", code).put("opponent", player1.getNickname()));
+    }
+
+    /**
+     * Manda ANIMAL_SELECTION a los dos: las especies que puede escoger cada uno
+     * (todas menos la del rival) y las especies que ya escogieron.
+     */
+    public synchronized void announceSelection() {
+        for (Player p : players()) {
+            Player opponent = otherPlayer(p);
+            List<Species> available = new ArrayList<>();
+            for (Species s : Species.values()) {
+                if (s != opponent.getSpecies()) {
+                    available.add(s);
+                }
+            }
+            p.send(new Message(MessageType.ANIMAL_SELECTION)
+                    .put("available", available)
+                    .put("mySpecies", p.getSpecies())
+                    .put("opponentSpecies", opponent.getSpecies()));
+        }
+    }
+
+    // Inicio 
 
     /**
      * Crea el mapa, los packs, las banderas y los cafés.
@@ -179,7 +207,7 @@ public class GameSession {
         }
     }
 
-    /** Pone los cafés en puertas al azar. */
+    // Pone los cafés en puertas al azar. 
     private void addCups() {
         List<PathNode> doors = new ArrayList<>(map.getDoorNodes());
         Collections.shuffle(doors, random);
@@ -202,9 +230,9 @@ public class GameSession {
         p.send(msg);
     }
 
-    // ----- Órdenes de los jugadores -----
+    // Órdenes de los jugadores 
 
-    /** Manda a los animales al nodo más cercano al clic, por los caminos. */
+    // Manda a los animales al nodo más cercano al clic, por los caminos. 
     public synchronized void moveAnimals(Player p, List<Integer> ids, double x, double y) throws GameException {
         checkPlaying();
         Position target = new Position(x, y);
@@ -266,7 +294,7 @@ public class GameSession {
         }
     }
 
-    // ----- El tick: se ejecuta cada TICK_MS -----
+    // El tick: se ejecuta cada TICK_MS 
 
     public synchronized void tick(long now) {
         if (state != MatchState.PLAYING) {
@@ -332,7 +360,7 @@ public class GameSession {
         }
     }
 
-    /** El primer pack que toca un café que nadie ha tomado, se lo queda. */
+    // El primer pack que toca un café que nadie ha tomado, se lo queda.
     private void checkCoffeeCups() {
         for (CoffeeCup cup : cups) {
             if (cup.isTaken()) {
@@ -352,7 +380,7 @@ public class GameSession {
         }
     }
 
-    /** Los ataques, y los eventos de bots eliminados, bonos y animales perdidos. */
+    // Los ataques, y los eventos de bots eliminados, bonos y animales perdidos. 
     private void fight(List<Animal> all, long now) {
         int kills1 = player1.getBotsKilled();
         int kills2 = player2.getBotsKilled();
@@ -367,7 +395,7 @@ public class GameSession {
         addCombatEvents(player2, kills2, dead2);
     }
 
-    /** Compara cuántos bots mató y cuántos animales perdió el jugador antes y después del combate. */
+    // Compara cuántos bots mató y cuántos animales perdió el jugador antes y después del combate. 
     private void addCombatEvents(Player p, int killsBefore, int deadBefore) {
         for (int k = killsBefore + 1; k <= p.getBotsKilled(); k++) {
             p.addEvent(GameConstants.EVENT_BOT_KILLED);
@@ -380,7 +408,7 @@ public class GameSession {
         }
     }
 
-    /** Si un animal del rival toca tu bandera, el rival gana. */
+    // Si un animal del rival toca tu bandera, el rival gana. 
     private void checkFlags() {
         checkFlagTouched(player1, player2);
         checkFlagTouched(player2, player1);
@@ -400,7 +428,7 @@ public class GameSession {
         }
     }
 
-    /** Si el jugador ya no tiene animales en la zona que ve, se le cambia a una donde sí tenga. */
+    // Si el jugador ya no tiene animales en la zona que ve, se le cambia a una donde sí tenga. 
     private void keepViewedZonesWithAnimals() {
         for (Player p : players()) {
             List<Animal> alive = p.getPack().getAliveMembers();
@@ -413,9 +441,9 @@ public class GameSession {
         }
     }
 
-    // ----- Avisar a los jugadores -----
+    // Avisar a los jugadores 
 
-    /** Manda ZONE_UPDATE solo si algo cambió, si cambió lo que puede ver, o si toca el chequeo de cada segundo. */
+    // Manda ZONE_UPDATE solo si algo cambió, si cambió lo que puede ver, o si toca el chequeo de cada segundo. 
     private void sendUpdates(long now) {
         boolean syncDue = now - lastSyncTime >= GameConstants.SYNC_MS;
         if (syncDue) {
@@ -449,7 +477,7 @@ public class GameSession {
         p.send(msg);
     }
 
-    /** Los animales que el jugador puede ver: los suyos y los de la zona que mira. */
+    // Los animales que el jugador puede ver: los suyos y los de la zona que mira. 
     private List<Animal> visibleAnimals(Player p) {
         List<Animal> visible = new ArrayList<>();
         for (Animal a : allAnimals()) {
@@ -490,7 +518,7 @@ public class GameSession {
         return points;
     }
 
-    /** Cafés sin tomar y banderas que están en la zona. */
+    // Cafés sin tomar y banderas que están en la zona. 
     private List<Map<String, Object>> itemsIn(int zoneId) {
         List<Map<String, Object>> items = new ArrayList<>();
         for (CoffeeCup cup : cups) {
@@ -515,7 +543,7 @@ public class GameSession {
         return data;
     }
 
-    /** Las zonas donde el jugador tiene animales vivos (para el mapa pequeño). */
+    // Las zonas donde el jugador tiene animales vivos (para el mapa pequeño). 
     private List<Integer> myZones(Player p) {
         List<Integer> zones = new ArrayList<>();
         for (Animal a : p.getPack().getAliveMembers()) {
@@ -527,9 +555,9 @@ public class GameSession {
         return zones;
     }
 
-    // ----- Fin de la partida -----
+    // Fin de la partida 
 
-    /** Termina la partida, para el tick y manda GAME_OVER a los dos. */
+    // Termina la partida, para el tick y manda GAME_OVER a los dos. 
     private void endGame(Player winner, String reason) {
         if (state == MatchState.FINISHED) {
             return;
@@ -580,21 +608,21 @@ public class GameSession {
         return list;
     }
 
-    // ----- Ayudantes -----
+    // Ayudantes 
 
-    /** La ruta por los caminos desde el nodo más cercano al animal hasta el nodo más cercano al destino. */
+    // La ruta por los caminos desde el nodo más cercano al animal hasta el nodo más cercano al destino. 
     private List<Position> routeTo(Animal a, Position target) {
         PathNode start = map.findNearestNode(a.getPosition());
         PathNode end = map.findNearestNode(target);
         return PathFinder.findRoute(start, end);
     }
 
-    /** Segundos enteros desde que empezó la partida. */
+    // Segundos enteros desde que empezó la partida.
     private int elapsedSeconds() {
         return (int) ((lastTickTime - startTime) / 1000);
     }
 
-    /** Un animal vivo del pack del jugador, o null si no existe o ya murió. */
+    // Un animal vivo del pack del jugador, o null si no existe o ya murió. 
     private PlayerAnimal findOwnAnimal(Player p, int id) {
         Animal a = p.getPack().findAnimal(id);
         if (a == null || !a.isAlive()) {
@@ -603,7 +631,7 @@ public class GameSession {
         return (PlayerAnimal) a;
     }
 
-    /** Un animal vivo de un pack rival. */
+    // Un animal vivo de un pack rival. 
     private Animal findEnemyAnimal(Player p, int id) throws GameException {
         for (Pack pack : packs) {
             if (pack == p.getPack()) {
@@ -669,7 +697,7 @@ public class GameSession {
         }
     }
 
-    // ----- Getters -----
+    // Getters 
 
     public synchronized String getCode() {
         return code;

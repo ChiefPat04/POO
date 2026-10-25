@@ -15,7 +15,7 @@ public class Position {
         this.y = y;
     }
 
-    /** Crea una copia nueva con los mismos valores que "other". */
+    // Crea una copia nueva con los mismos valores que "other".
     public Position(Position other) {
         this.x = other.x;
         this.y = other.y;
@@ -37,7 +37,7 @@ public class Position {
         this.y = y;
     }
 
-    /** Distancia en línea recta (teorema de Pitágoras). */
+    // Distancia en línea recta (teorema de Pitágoras).
     public double distanceTo(Position other) {
         double dx = other.x - x;
         double dy = other.y - y;

@@ -19,7 +19,7 @@ public abstract class MapItem {
         this.imageFile = imageFile;
     }
 
-    /** Un animal vivo lo toca si está a "touchRadius" píxeles o menos. */
+    // Un animal vivo lo toca si está a "touchRadius" píxeles o menos. 
     public boolean isTouchedBy(Animal animal) {
         if (!animal.isAlive()) {
             return false;

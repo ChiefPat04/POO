@@ -31,7 +31,7 @@ public class PlayerPack extends Pack {
         return false;
     }
 
-    /** Le suma energía a cada animal vivo, sin pasar de MAX_PLAYER_ENERGY. */
+    // Le suma energía a cada animal vivo, sin pasar de MAX_PLAYER_ENERGY. 
     public void healAll(int amount) {
         for (Animal a : getAliveMembers()) {
             a.heal(amount, GameConstants.MAX_PLAYER_ENERGY);

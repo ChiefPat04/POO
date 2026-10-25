@@ -22,7 +22,7 @@ public class PathNode {
         this.neighbors = new ArrayList<>();
     }
 
-    /** Une los dos nodos en los dos sentidos (el grafo no tiene dirección). */
+    // Une los dos nodos en los dos sentidos (el grafo no tiene dirección). 
     public void connect(PathNode other) {
         if (!neighbors.contains(other)) {
             neighbors.add(other);

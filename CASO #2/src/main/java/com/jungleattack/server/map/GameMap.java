@@ -31,7 +31,7 @@ public class GameMap {
         connectNeighbors();
     }
 
-    /** Paso 1: crear las 12 zonas, cada una con su nodo del centro. */
+    // Paso 1: crear las 12 zonas, cada una con su nodo del centro. 
     private void createZones() {
         for (int row = 0; row < GameConstants.ZONE_ROWS; row++) {
             for (int column = 0; column < GameConstants.ZONE_COLUMNS; column++) {
@@ -44,7 +44,7 @@ public class GameMap {
         }
     }
 
-    /** Paso 2: poner las puertas entre cada par de zonas vecinas y unirlas. */
+    // Paso 2: poner las puertas entre cada par de zonas vecinas y unirlas. 
     private void connectNeighbors() {
         for (Zone zone : zones) {
             double minX = zone.getMinX();
@@ -72,7 +72,7 @@ public class GameMap {
         }
     }
 
-    /** Crea una puerta en la zona y la une con el centro de esa zona. */
+    // Crea una puerta en la zona y la une con el centro de esa zona. 
     private PathNode addDoor(Zone zone, double x, double y) {
         PathNode door = createNode(x, y, zone.getId());
         zone.addNode(door);
@@ -87,14 +87,14 @@ public class GameMap {
         return node;
     }
 
-    // ----- Métodos públicos -----
+    // Métodos públicos 
 
-    /** Los ids coinciden con la posición en la lista, por eso basta con get(id). */
+    // Los ids coinciden con la posición en la lista, por eso basta con get(id). 
     public Zone getZone(int id) {
         return zones.get(id);
     }
 
-    /** columna = x / 800, fila = y / 600. Si el punto se sale del mapa, usa la zona del borde. */
+    // columna = x / 800, fila = y / 600. Si el punto se sale del mapa, usa la zona del borde. 
     public int getZoneIdAt(Position p) {
         int column = (int) (p.getX() / GameConstants.ZONE_WIDTH);
         int row = (int) (p.getY() / GameConstants.ZONE_HEIGHT);
@@ -103,7 +103,7 @@ public class GameMap {
         return row * GameConstants.ZONE_COLUMNS + column;
     }
 
-    /** Recorre todos los nodos y devuelve el que está más cerca de p. */
+    // Recorre todos los nodos y devuelve el que está más cerca de p. 
     public PathNode findNearestNode(Position p) {
         PathNode nearest = null;
         double nearestDistance = Double.MAX_VALUE;
@@ -117,7 +117,7 @@ public class GameMap {
         return nearest;
     }
 
-    /** Todos los nodos que no son centros (sirve para poner los cafés). */
+    // Todos los nodos que no son centros (sirve para poner los cafés). 
     public List<PathNode> getDoorNodes() {
         List<PathNode> doors = new ArrayList<>();
         for (Zone zone : zones) {

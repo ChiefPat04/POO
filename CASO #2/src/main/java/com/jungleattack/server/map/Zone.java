@@ -26,22 +26,22 @@ public class Zone {
         this.nodes.add(center);
     }
 
-    /** Agrega una puerta a la zona. Lo usa GameMap al armar el mapa. */
+    // Agrega una puerta a la zona. Lo usa GameMap al armar el mapa.
     public void addNode(PathNode node) {
         nodes.add(node);
     }
 
-    /** La x del borde izquierdo de la zona. */
+    // La x del borde izquierdo de la zona.
     public double getMinX() {
         return column * GameConstants.ZONE_WIDTH;
     }
 
-    /** La y del borde de arriba de la zona. */
+    // La y del borde de arriba de la zona.
     public double getMinY() {
         return row * GameConstants.ZONE_HEIGHT;
     }
 
-    /** true si el punto está dentro de esta zona. */
+    // true si el punto está dentro de esta zona.
     public boolean contains(Position p) {
         return p.getX() >= getMinX() && p.getX() < getMinX() + GameConstants.ZONE_WIDTH
                 && p.getY() >= getMinY() && p.getY() < getMinY() + GameConstants.ZONE_HEIGHT;

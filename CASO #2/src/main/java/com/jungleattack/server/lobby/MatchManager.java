@@ -30,7 +30,7 @@ public class MatchManager {
         return INSTANCE;
     }
 
-    /** Crea una partida nueva con un código único y el jugador como creador. */
+    // Crea una partida nueva con un código único y el jugador como creador.
     public synchronized GameSession createMatch(Player creator) {
         String code = generateCode();
         GameSession session = new GameSession(code, creator, random);
@@ -51,7 +51,7 @@ public class MatchManager {
         return session;
     }
 
-    /** Borra una partida. Se usa cuando termina o si el creador se va antes de que entre el otro. */
+    // Borra una partida. Se usa cuando termina o si el creador se va antes de que entre el otro. 
     public void removeMatch(String code) {
         sessions.remove(normalizeCode(code));
     }
@@ -73,7 +73,7 @@ public class MatchManager {
         return code;
     }
 
-    /** Pasa el código a mayúsculas y le quita los espacios, así "a7k2 " funciona igual que "A7K2". */
+    // Pasa el código a mayúsculas y le quita los espacios, así "a7k2 " funciona igual que "A7K2".
     public static String normalizeCode(String code) {
         if (code == null) {
             return "";
