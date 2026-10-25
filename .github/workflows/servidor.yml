@@ -1,0 +1,26 @@
+name: Pruebas del servidor
+
+on:
+  push:
+    paths:
+      - 'CASO #2/**'
+      - '.github/workflows/servidor.yml'
+  pull_request:
+    paths:
+      - 'CASO #2/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'CASO #2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: 'CASO #2/pom.xml'
+      - run: mvn -B test
