@@ -232,7 +232,8 @@ public class GameSession {
 
     // Órdenes de los jugadores 
 
-    // Manda a los animales al nodo más cercano al clic, por los caminos. 
+    // Manda a los animales al nodo más cercano al clic, por los caminos.
+    // Si el clic cae entre una puerta y el borde, van a la puerta de la zona de al lado (ver GameMap.findClickNode).
     public synchronized void moveAnimals(Player p, List<Integer> ids, double x, double y) throws GameException {
         checkPlaying();
         Position target = new Position(x, y);
@@ -240,7 +241,7 @@ public class GameSession {
             PlayerAnimal a = findOwnAnimal(p, id);
             if (a != null) {
                 a.setOrderedTarget(null);
-                a.setRoute(routeTo(a, target));
+                a.setRoute(routeToNode(a, map.findClickNode(target)));
             }
         }
         changed = true;
@@ -612,8 +613,12 @@ public class GameSession {
 
     // La ruta por los caminos desde el nodo más cercano al animal hasta el nodo más cercano al destino. 
     private List<Position> routeTo(Animal a, Position target) {
+        return routeToNode(a, map.findNearestNode(target));
+    }
+
+    // La ruta por los caminos desde el nodo más cercano al animal hasta el nodo "end". 
+    private List<Position> routeToNode(Animal a, PathNode end) {
         PathNode start = map.findNearestNode(a.getPosition());
-        PathNode end = map.findNearestNode(target);
         return PathFinder.findRoute(start, end);
     }
 

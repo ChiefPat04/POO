@@ -24,6 +24,8 @@ public final class GameConstants {
     public static final int ZONE_WIDTH = 800;
     public static final int ZONE_HEIGHT = 600;
     public static final int DOOR_MARGIN = 40;
+    // Un clic a esta distancia de una puerta, del lado del borde, manda a los animales a la zona de al lado
+    public static final int DOOR_CLICK_RADIUS = 80;
 
     // Pack del jugador 
     public static final int PLAYER_PACK_SIZE = 10;

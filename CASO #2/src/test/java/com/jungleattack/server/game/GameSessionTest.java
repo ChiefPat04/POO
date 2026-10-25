@@ -3,6 +3,7 @@ package com.jungleattack.server.game;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -254,6 +255,39 @@ class GameSessionTest {
         }
         Position last = route.get(route.size() - 1);
         assertEquals(0, map.findNearestNode(click).getPosition().distanceTo(last), 0.0001);
+    }
+
+    @Test
+    void clickBetweenADoorAndTheBorderMakesTheAnimalsCrossToTheNextZone() throws GameException {
+        startGame();
+        Animal anaAnimal = ana.getPack().getAliveMembers().get(0);
+        int startZone = ana.getViewedZoneId();
+
+        // Buscamos una puerta de la zona inicial que tenga su pareja en otra zona
+        GameMap map = new GameMap();
+        PathNode door = null;
+        PathNode otherDoor = null;
+        for (PathNode node : map.getZone(startZone).getNodes()) {
+            for (PathNode neighbor : node.getNeighbors()) {
+                if (neighbor.getZoneId() != startZone) {
+                    door = node;
+                    otherDoor = neighbor;
+                }
+            }
+        }
+        assertNotNull(door);
+
+        // Un clic a un cuarto del camino entre las dos puertas: todavía dentro de la zona inicial
+        double clickX = door.getPosition().getX() + (otherDoor.getPosition().getX() - door.getPosition().getX()) / 4;
+        double clickY = door.getPosition().getY() + (otherDoor.getPosition().getY() - door.getPosition().getY()) / 4;
+        assertEquals(startZone, map.getZoneIdAt(new Position(clickX, clickY)));
+
+        session.moveAnimals(ana, List.of(anaAnimal.getId()), clickX, clickY);
+
+        List<Position> route = anaAnimal.getRoute();
+        Position last = route.get(route.size() - 1);
+        assertEquals(0, last.distanceTo(otherDoor.getPosition()), 0.0001);
+        assertNotEquals(startZone, map.getZoneIdAt(last));
     }
 
     @Test

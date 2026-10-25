@@ -117,6 +117,35 @@ public class GameMap {
         return nearest;
     }
 
+    /**
+     * El nodo al que van los animales cuando el jugador hace clic en "click".
+     * Normalmente es el nodo más cercano. Pero si el clic cae cerca de una puerta, del lado del borde
+     * (entre la puerta y la otra zona), el destino es la puerta de la zona de al lado.
+     * Así el jugador puede cruzar de zona sin tener que ver la zona de al lado.
+     */
+    public PathNode findClickNode(Position click) {
+        PathNode nearest = findNearestNode(click);
+        if (click.distanceTo(nearest.getPosition()) > GameConstants.DOOR_CLICK_RADIUS) {
+            return nearest;
+        }
+        for (PathNode neighbor : nearest.getNeighbors()) {
+            // Una puerta tiene un vecino en otra zona: la puerta de la zona de al lado
+            if (neighbor.getZoneId() != nearest.getZoneId() && isTowards(click, nearest, neighbor)) {
+                return neighbor;
+            }
+        }
+        return nearest;
+    }
+
+    // true si el clic está del lado de "to" respecto a "from" (producto punto mayor que 0). 
+    private boolean isTowards(Position click, PathNode from, PathNode to) {
+        double dx = to.getPosition().getX() - from.getPosition().getX();
+        double dy = to.getPosition().getY() - from.getPosition().getY();
+        double cx = click.getX() - from.getPosition().getX();
+        double cy = click.getY() - from.getPosition().getY();
+        return cx * dx + cy * dy > 0;
+    }
+
     // Todos los nodos que no son centros (sirve para poner los cafés). 
     public List<PathNode> getDoorNodes() {
         List<PathNode> doors = new ArrayList<>();

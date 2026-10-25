@@ -62,4 +62,51 @@ class GameMapTest {
         PathNode center0 = map.getZone(0).getCenter();
         assertSame(center0, map.findNearestNode(new Position(410, 290)));
     }
+
+    // La zona 0 tiene su puerta de la derecha en (760, 300) y la zona 1 la suya en (840, 300)
+
+    @Test
+    void clickBetweenTheDoorAndTheBorderGoesToTheNextZone() {
+        PathNode node = map.findClickNode(new Position(790, 300));
+        assertEquals(840, node.getPosition().getX(), 0.0001);
+        assertEquals(300, node.getPosition().getY(), 0.0001);
+        assertEquals(1, node.getZoneId());
+    }
+
+    @Test
+    void clickOnTheInsideSideOfTheDoorStaysInTheZone() {
+        PathNode node = map.findClickNode(new Position(700, 300));
+        assertEquals(760, node.getPosition().getX(), 0.0001);
+        assertEquals(0, node.getZoneId());
+    }
+
+    @Test
+    void clickFarFromTheDoorStaysInTheZone() {
+        // Está en el borde derecho pero lejos de la puerta (a 200 píxeles hacia arriba)
+        PathNode node = map.findClickNode(new Position(790, 100));
+        assertEquals(0, node.getZoneId());
+    }
+
+    @Test
+    void clickNearTheBottomDoorGoesDown() {
+        // La puerta de abajo de la zona 0 está en (400, 560) y la de la zona 4 en (400, 640)
+        PathNode node = map.findClickNode(new Position(400, 590));
+        assertEquals(400, node.getPosition().getX(), 0.0001);
+        assertEquals(640, node.getPosition().getY(), 0.0001);
+        assertEquals(4, node.getZoneId());
+    }
+
+    @Test
+    void clickNearTheLeftDoorOfTheNextZoneGoesBack() {
+        // Viendo la zona 1, un clic entre el borde izquierdo y su puerta (840, 300) vuelve a la zona 0
+        PathNode node = map.findClickNode(new Position(810, 300));
+        assertEquals(760, node.getPosition().getX(), 0.0001);
+        assertEquals(0, node.getZoneId());
+    }
+
+    @Test
+    void clickAtTheMapBorderWithoutNeighborStaysInTheZone() {
+        // La zona 0 no tiene vecino a la izquierda, ni puerta ahí
+        assertSame(map.getZone(0).getCenter(), map.findClickNode(new Position(10, 300)));
+    }
 }
