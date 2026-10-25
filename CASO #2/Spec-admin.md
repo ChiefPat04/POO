@@ -22,7 +22,7 @@ Además de las reglas del enunciado, decidimos lo siguiente:
 
 - **Mapa:** 12 zonas en una cuadrícula de 4 columnas x 3 filas. Cada zona mide lo mismo que la pantalla del cliente (800 x 600).
 - **Caminos:** cada zona tiene un nodo en el centro y una "puerta" hacia cada zona vecina. El centro se une con sus puertas, y cada puerta se une con la puerta de la zona vecina. Así el mapa es un **grafo** y los animales solo caminan por esas líneas.
-- **Destino:** cuando el jugador hace clic, el servidor busca el **nodo más cercano** al clic y manda a los animales hasta ahí por la ruta que encuentra **BFS**.
+- **Destino:** cuando el jugador hace clic, el servidor busca el **nodo más cercano** al clic y manda a los animales hasta ahí por la ruta que encuentra **BFS**. **Cruce de zona:** si el clic cae entre una puerta y el borde de la zona (a menos de `DOOR_CLICK_RADIUS` = 80 píxeles de la puerta), el destino es la **puerta de la zona vecina**. Así los animales pueden pasar a una zona donde el jugador todavía no tiene animales (y que por eso no puede ver). Esto solo aplica a `MOVE_ANIMALS`, no a `ATTACK`.
 - **Bots:** cada pack bot **patrulla su propia zona**. Camina junto a un nodo al azar de su zona, espera unos segundos y escoge otro. Nunca sale de su zona. Si un enemigo entra en su rango, **se detiene a pelear**. Camina más lento que los animales del jugador.
 - **Cafés:** los 10 cafés se ponen en puertas escogidas al azar, sin repetir.
 - **Bandera:** cada jugador tiene su bandera en el centro de su zona inicial.
@@ -124,7 +124,7 @@ Guarda todos los números del juego, para no tener números sueltos en el códig
 
 - **Red:** `SERVER_PORT = 5000`
 - **Código de partida:** `CODE_LENGTH = 4`, `CODE_CHARACTERS = "A..Z0..9"`
-- **Mapa:** `ZONE_COLUMNS = 4`, `ZONE_ROWS = 3`, `ZONE_WIDTH = 800`, `ZONE_HEIGHT = 600`, `DOOR_MARGIN = 40`
+- **Mapa:** `ZONE_COLUMNS = 4`, `ZONE_ROWS = 3`, `ZONE_WIDTH = 800`, `ZONE_HEIGHT = 600`, `DOOR_MARGIN = 40`, `DOOR_CLICK_RADIUS = 80`
 - **Pack del jugador:** `PLAYER_PACK_SIZE = 10`, `PLAYER_START_ENERGY = 20`, `MAX_PLAYER_ENERGY = 20`, `PLAYER_START_DAMAGE = 2`
 - **Pack bot:** `BOT_PACK_SIZE = 4`, `BOT_START_ENERGY = 10`, `BOT_DAMAGE = 1`
 - **Cafés y bono:** `COFFEE_CUP_COUNT = 10`, `COFFEE_DAMAGE_BONUS = 1`, `BOTS_KILLED_FOR_BONUS = 2`, `ENERGY_BONUS = 1`
@@ -280,6 +280,7 @@ Algo que está quieto en el mapa y se puede tocar.
 + getZone(int id): Zone
 + getZoneIdAt(Position p): int      // columna = x / 800, fila = y / 600
 + findNearestNode(Position p): PathNode
++ findClickNode(Position click): PathNode   // a dónde lleva un clic (ver la regla "Destino")
 + getDoorNodes(): List<PathNode>
 + getPathLines(): List<double[]>    // las líneas que se mandan en GAME_STARTED
 ```
@@ -508,13 +509,15 @@ Hay al menos un test por paquete, todos sin red real:
   - que `healAll` no pasa de 20;
   - que la patrulla nunca sale de su zona.
 - **`PathFinderTest`** (map): las rutas entre zonas vecinas y entre esquinas opuestas, y que las 12 zonas están conectadas.
+- **`GameMapTest`** (map): las 12 zonas y sus puertas, y a qué nodo lleva un clic: uno entre la puerta y el borde lleva a la zona vecina; uno lejos de la puerta, no.
 - **`CombatManagerTest`** (game): el ejemplo del enunciado, que los bots no se atacan entre ellos y el bono cada 2 bots.
 - **`GameSessionTest`** (game):
   - que no se puede repetir especie y que quedan 5 bots;
   - que las 7 zonas iniciales son distintas;
   - que un café se toma una sola vez;
   - que tocar la bandera rival termina la partida;
-  - que no se manda un `ZONE_UPDATE` si no cambió nada.
+  - que no se manda un `ZONE_UPDATE` si no cambió nada;
+  - que un clic entre una puerta y el borde hace que los animales crucen a la zona vecina.
 - **`MatchManagerTest`** (lobby):
   - que el código tiene 4 caracteres válidos y no se repite;
   - que las mayúsculas y minúsculas dan igual;
@@ -604,6 +607,7 @@ classDiagram
 
     class GameMap {
         +findNearestNode(Position p) PathNode
+        +findClickNode(Position click) PathNode
         +getZoneIdAt(Position p) int
     }
     class Zone
