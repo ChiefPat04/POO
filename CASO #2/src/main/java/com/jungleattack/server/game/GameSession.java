@@ -76,7 +76,7 @@ public class GameSession {
         return player2 != null;
     }
 
-    /** true cuando los dos ya escogieron especie. */
+    // true cuando los dos ya escogieron especie. 
     public synchronized boolean bothSelected() {
         return player2 != null && player1.getSpecies() != null && player2.getSpecies() != null;
     }
@@ -91,7 +91,7 @@ public class GameSession {
         p.setSpecies(species);
     }
 
-    /** Manda MATCH_JOINED a los dos: cada uno ve el nombre del otro. */
+    // Manda MATCH_JOINED a los dos: cada uno ve el nombre del otro. 
     public synchronized void announceJoined() {
         player1.send(new Message(MessageType.MATCH_JOINED)
                 .put("code", code).put("opponent", player2.getNickname()));
@@ -156,7 +156,7 @@ public class GameSession {
         sendUpdates(now);
     }
 
-    /** Arranca el hilo que llama tick() cada TICK_MS. Lo llama el servidor después de startGame(). */
+    // Arranca el hilo que llama tick() cada TICK_MS. Lo llama el servidor después de startGame(). 
     public synchronized void startLoop() {
         if (loop != null || state != MatchState.PLAYING) {
             return;
@@ -712,12 +712,12 @@ public class GameSession {
         return state;
     }
 
-    /** Una copia de la lista de packs (2 de jugadores y 5 bots). */
+    // Una copia de la lista de packs (2 de jugadores y 5 bots). 
     public synchronized List<Pack> getPacks() {
         return new ArrayList<>(packs);
     }
 
-    /** Una copia de la lista de cafés. */
+    // Una copia de la lista de cafés. 
     public synchronized List<CoffeeCup> getCups() {
         return new ArrayList<>(cups);
     }

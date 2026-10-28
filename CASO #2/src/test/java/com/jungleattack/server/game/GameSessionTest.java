@@ -51,7 +51,7 @@ class GameSessionTest {
         session.addSecondPlayer(beto);
     }
 
-    /** Escoge especies y arranca la partida en t = 0, sin el hilo del tick. */
+    // Escoge especies y arranca la partida en t = 0, sin el hilo del tick. 
     private void startGame() throws GameException {
         session.selectSpecies(ana, Species.JAGUAR);
         session.selectSpecies(beto, Species.TAPIR);
@@ -95,7 +95,7 @@ class GameSessionTest {
         return bots;
     }
 
-    // ----- Sala de espera -----
+    // Sala de espera
 
     @Test
     void speciesCannotBeRepeated() throws GameException {
@@ -128,7 +128,7 @@ class GameSessionTest {
         assertEquals("Beto", over.getString("winner"));
     }
 
-    // ----- Inicio -----
+    // Inicio
 
     @Test
     void startSendsGameStartedAndFirstZoneUpdate() throws GameException {
@@ -162,7 +162,7 @@ class GameSessionTest {
         assertEquals(7, zones.size());
     }
 
-    // ----- Durante el juego -----
+    // Durante el juego
 
     @Test
     void coffeeIsTakenOnlyOnce() throws GameException {

@@ -36,7 +36,7 @@ public abstract class Pack {
         }
     }
 
-    /** Cada hijo crea su propio tipo de animal (PlayerAnimal o BotAnimal). */
+    // Cada hijo crea su propio tipo de animal (PlayerAnimal o BotAnimal). 
     protected abstract Animal createAnimal(int id, Position position);
 
     public abstract int getSize();

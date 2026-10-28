@@ -35,7 +35,7 @@ class CombatManagerTest {
         botPack = new BotPack(Species.TAPIR, 0);
     }
 
-    /** Corre processAttacks cada 50 ms, como lo hace el tick, desde "from" hasta "to". */
+    // Corre processAttacks cada 50 ms, como lo hace el tick, desde "from" hasta "to". 
     private void runTicks(List<Animal> all, long from, long to) {
         for (long t = from; t <= to; t += 50) {
             combat.processAttacks(all, t);

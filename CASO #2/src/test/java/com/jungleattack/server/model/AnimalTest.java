@@ -27,7 +27,7 @@ class AnimalTest {
         otherBotPack = new BotPack(Species.COATI, 1);
     }
 
-    // ----- Energía -----
+    // Energía
 
     @Test
     void damageLowersEnergy() {
@@ -56,7 +56,7 @@ class AnimalTest {
         assertEquals(20, a.getEnergy());
     }
 
-    // ----- Combate -----
+    // Combate
 
     @Test
     void attackCooldownIsOneSecond() {
@@ -131,7 +131,7 @@ class AnimalTest {
         assertFalse(p.isEnemyOf(sameTeam));
     }
 
-    // ----- Movimiento -----
+    // Movimiento
 
     @Test
     void moveStepKeepsConstantSpeed() {

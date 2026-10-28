@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.jungleattack.server.util.Position;
 
-/** Pruebas de CoffeeCup, Flag y Player. */
+// Pruebas de CoffeeCup, Flag y Player.
 class MapItemTest {
 
     private final PlayerPack pack = new PlayerPack(new Player("Ana", null), Species.JAGUAR);
