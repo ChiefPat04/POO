@@ -34,12 +34,12 @@ public class GameMap {
     // Paso 1: crear las 12 zonas, cada una con su nodo del centro. 
     private void createZones() {
         for (int row = 0; row < GameConstants.ZONE_ROWS; row++) {
-            for (int column = 0; column < GameConstants.ZONE_COLUMNS; column++) {
-                int zoneId = row * GameConstants.ZONE_COLUMNS + column;
-                double centerX = column * GameConstants.ZONE_WIDTH + GameConstants.ZONE_WIDTH / 2.0;
-                double centerY = row * GameConstants.ZONE_HEIGHT + GameConstants.ZONE_HEIGHT / 2.0;
-                PathNode center = createNode(centerX, centerY, zoneId);
-                zones.add(new Zone(zoneId, column, row, center));
+            for (int column = 0; column < GameConstants.ZONE_COLUMNS; column++) { 
+                int zoneId = row * GameConstants.ZONE_COLUMNS + column; 
+                double centerX = column * GameConstants.ZONE_WIDTH + GameConstants.ZONE_WIDTH / 2.0; 
+                double centerY = row * GameConstants.ZONE_HEIGHT + GameConstants.ZONE_HEIGHT / 2.0; 
+                PathNode center = createNode(centerX, centerY, zoneId); 
+                zones.add(new Zone(zoneId, column, row, center)); 
             }
         }
     }
@@ -97,24 +97,24 @@ public class GameMap {
     // columna = x / 800, fila = y / 600. Si el punto se sale del mapa, usa la zona del borde. 
     public int getZoneIdAt(Position p) {
         int column = (int) (p.getX() / GameConstants.ZONE_WIDTH);
-        int row = (int) (p.getY() / GameConstants.ZONE_HEIGHT);
-        column = Math.max(0, Math.min(column, GameConstants.ZONE_COLUMNS - 1));
-        row = Math.max(0, Math.min(row, GameConstants.ZONE_ROWS - 1));
-        return row * GameConstants.ZONE_COLUMNS + column;
+        int row = (int) (p.getY() / GameConstants.ZONE_HEIGHT); 
+        column = Math.max(0, Math.min(column, GameConstants.ZONE_COLUMNS - 1)); 
+        row = Math.max(0, Math.min(row, GameConstants.ZONE_ROWS - 1)); 
+        return row * GameConstants.ZONE_COLUMNS + column; //
     }
 
     // Recorre todos los nodos y devuelve el que está más cerca de p. 
-    public PathNode findNearestNode(Position p) {
-        PathNode nearest = null;
-        double nearestDistance = Double.MAX_VALUE;
-        for (PathNode node : nodes) {
-            double d = node.getPosition().distanceTo(p);
-            if (d < nearestDistance) {
-                nearest = node;
-                nearestDistance = d;
+    public PathNode findNearestNode(Position p) { 
+        PathNode nearest = null; 
+        double nearestDistance = Double.MAX_VALUE; 
+        for (PathNode node : nodes) { 
+            double d = node.getPosition().distanceTo(p); 
+            if (d < nearestDistance) { 
+                nearest = node; 
+                nearestDistance = d; 
             }
         }
-        return nearest;
+        return nearest; 
     }
 
     /**

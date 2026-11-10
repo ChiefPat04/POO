@@ -301,16 +301,16 @@ public class GameSession {
         if (state != MatchState.PLAYING) {
             return;
         }
-        double seconds = (now - lastTickTime) / 1000.0;
+        double seconds = (now - lastTickTime) / 1000.0; 
         lastTickTime = now;
         List<Animal> all = allAnimals();
 
-        updateBots(now);
-        stopAnimalsInFight(all, now);
-        moveAll(all, seconds);
-        checkCoffeeCups();
-        fight(all, now);
-        checkFlags();
+        updateBots(now); 
+        stopAnimalsInFight(all, now); 
+        moveAll(all, seconds); 
+        checkCoffeeCups(); 
+        fight(all, now); 
+        checkFlags(); 
         if (state != MatchState.PLAYING) {
             return;
         }
@@ -319,7 +319,7 @@ public class GameSession {
             return;
         }
         keepViewedZonesWithAnimals();
-        sendUpdates(now);
+        sendUpdates(now); //
     }
 
     private void updateBots(long now) {

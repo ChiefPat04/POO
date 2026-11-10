@@ -119,19 +119,19 @@ public abstract class Animal {
      * Si llega a un punto y le sobra distancia, sigue hacia el siguiente.
      * El cliente usa este mismo cálculo.
      */
-    public void moveStep(double seconds) {
-        double distance = getSpeed() * seconds;
+    public void moveStep(double seconds) { 
+        double distance = getSpeed() * seconds; 
         while (distance > 0 && !route.isEmpty()) {
             Position next = route.get(0);
             double d = position.distanceTo(next);
-            if (d <= distance) {
-                position.setX(next.getX());
-                position.setY(next.getY());
-                route.remove(0);
-                distance = distance - d;
-            } else {
-                position.moveTowards(next, distance);
-                distance = 0;
+            if (d <= distance) { 
+                position.setX(next.getX()); 
+                position.setY(next.getY()); 
+                route.remove(0); 
+                distance = distance - d; 
+            } else { 
+                position.moveTowards(next, distance); 
+                distance = 0; 
             }
         }
     }

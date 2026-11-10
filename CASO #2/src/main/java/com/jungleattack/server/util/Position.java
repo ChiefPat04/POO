@@ -38,9 +38,9 @@ public class Position {
     }
 
     // Distancia en línea recta (teorema de Pitágoras).
-    public double distanceTo(Position other) {
-        double dx = other.x - x;
-        double dy = other.y - y;
+    public double distanceTo(Position other) { 
+        double dx = other.x - x; 
+        double dy = other.y - y; 
         return Math.sqrt(dx * dx + dy * dy);
     }
 
@@ -49,16 +49,16 @@ public class Position {
      * Si el destino está más cerca que eso, se queda justo en el destino (no se pasa).
      */
     public void moveTowards(Position target, double distance) {
-        double remaining = distanceTo(target);
-        if (remaining <= distance) {
-            x = target.x;
-            y = target.y;
-            return;
+        double remaining = distanceTo(target); 
+        if (remaining <= distance) { 
+            x = target.x; 
+            y = target.y; 
+            return; 
         }
         // Avanzamos una fracción del camino: distance / remaining
         double fraction = distance / remaining;
-        x = x + (target.x - x) * fraction;
-        y = y + (target.y - y) * fraction;
+        x = x + (target.x - x) * fraction; 
+        y = y + (target.y - y) * fraction; 
     }
 
     @Override

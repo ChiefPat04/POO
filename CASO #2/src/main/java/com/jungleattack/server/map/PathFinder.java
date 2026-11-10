@@ -32,7 +32,7 @@ public final class PathFinder {
 
         queue.add(start);
         visited.add(start);
-        boolean found = false;
+        boolean found = false; //
 
         while (!queue.isEmpty()) {
             PathNode current = queue.poll();
