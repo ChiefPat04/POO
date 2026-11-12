@@ -1,0 +1,18 @@
+---
+paths:
+  - "src/powerband/**/*.java"
+---
+- Use Java only. Target the JDK version declared in `pom.xml`.
+- The entrypoint (`public static void main`) stays in `src/powerband/PowerBandMain.java`.
+- Respect the package layout described in `CLAUDE.md`. Do not create new top-level packages without updating `CLAUDE.md`.
+- Packages are lowercase; classes are `PascalCase`; methods and fields are `camelCase`; constants are `UPPER_SNAKE_CASE`.
+- One public top-level type per file, and the file name matches the type name.
+- Depend on interfaces and abstract classes; keep fields `private` and expose behavior through methods.
+- Prefer the standard library. Add a dependency only when the standard library cannot do the job.
+- Use JUnit for unit testing. Test classes stay in `src/test/` and mirror the package structure of the main code.
+- Constants must be declared in `src/powerband/util/IConstants.java`, be `public static final`, and be implemented as an interface. No magic numbers or literal strings in the code.
+- Every method parameter name must start with `p` followed by a descriptive name (e.g., `pNote`, `pDurationMs`, `pRecordingName`).
+- Errors use custom checked exceptions from `src/powerband/exception/`, all extending `PowerBandException`. Never swallow an exception with an empty `catch`.
+- Close every stream, file and socket with try-with-resources.
+- Persistence of recordings uses only binary I/O (`RandomAccessFile`, `DataInputStream`, `DataOutputStream` and their relatives) with fixed-size records.
+- Never load the recordings index or the recordings themselves into an array or collection in memory to sort or search them. Sorting (Balanced Merge Sort) and searching (binary search) happen on files on disk.
