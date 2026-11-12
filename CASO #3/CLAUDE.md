@@ -2,14 +2,14 @@
 Power Band es un programa de creación e interacción musical. Desde Java se invocan 3 sintetizadores (synths) que corren en un servidor de SuperCollider (`scsynth`). Cada synth se controla con un dispositivo físico distinto (nunca teclado ni mouse). Un editor musical monitorea todos los comandos que se envían a SuperCollider y permite grabarlos, guardarlos en disco, cargarlos y reproducirlos de forma idéntica a como se tocaron.
 
 # Equipo y funcionalidades (*sujeto a cambios*)
-ft-1 Contratos Bridge y conexión SuperCollider: ambos
-ft-2 Micrófono → órgano: Patrick
-ft-3 Control PS5 → bajo: Patrick
-ft-4 Webcam → piano: Elian
-ft-5 Grabación (.music y .list): Patrick
-ft-6 Índice: Balanced Merge Sort y búsqueda binaria: Elian
-ft-7 Cargar y reproducir: Elian
-ft-8 Ventana del editor e integración: ambos
+- ft-1 Contratos Bridge y conexión SuperCollider: ambos
+- ft-2 Micrófono → órgano: Patrick
+- ft-3 Control PS5 → bajo: Patrick
+- ft-4 Webcam → piano: Elian
+- ft-5 Grabación (.music y .list): Patrick
+- ft-6 Índice: Balanced Merge Sort y búsqueda binaria: Elian
+- ft-7 Cargar y reproducir: Elian
+- ft-8 Ventana del editor e integración: ambos
 
 # Tech stack
 - Java (versión en `maven.compiler.release` de `pom.xml`)
