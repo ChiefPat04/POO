@@ -1,5 +1,6 @@
 # Project description
 Power Band es un programa de creación e interacción musical. Desde Java se invocan 3 sintetizadores (synths) que corren en un servidor de SuperCollider (`scsynth`). Cada synth se controla con un dispositivo físico distinto (nunca teclado ni mouse). Un editor musical monitorea todos los comandos que se envían a SuperCollider y permite grabarlos, guardarlos en disco, cargarlos y reproducirlos de forma idéntica a como se tocaron.
+Proyecto en pareja del curso de POO (Caso #3). El enunciado completo está en `docs/enunciado.md`.
 
 # Equipo y funcionalidades (*sujeto a cambios*)
 - ft-1 Contratos Bridge y conexión SuperCollider: ambos
@@ -60,12 +61,10 @@ Power Band es un programa de creación e interacción musical. Desde Java se inv
 - Grabar: al activar el modo grabación, cada comando se escribe en tiempo real en `recordings.music` con el instante relativo al inicio de la grabación. Al detener, se pide un nombre único; si ya existe, se rechaza y se pide otro.
 - Cada grabación en `recordings.music` tiene un encabezado con nombre, posición de inicio y posición de fin dentro del archivo.
 - `recordings.index`: registros de tamaño fijo (nombre de longitud fija + posición del encabezado), ordenados por nombre. Se actualiza al terminar cada grabación con Balanced Merge Sort sobre archivos en disco.
-- `recordings.list`: nombre y fecha/hora de cada grabación, en orden cronológico.
 - Cargar: muestra la lista cronológica desde `recordings.list`; con el nombre elegido se hace búsqueda binaria en disco sobre `recordings.index`.
 - Reproducir: lee los comandos de la grabación y los envía respetando los intervalos grabados, para que suene idéntica.
 - En `recordings.music` todos los registros miden lo mismo, sean encabezados o comandos. El primer byte de cada registro indica su tipo: 1 = encabezado, 2 = comando.
 - El nombre de una grabación tiene máximo 32 caracteres, sin tildes ni ñ. Se distinguen mayúsculas de minúsculas: “Cancion1” y “cancion1” son nombres distintos. Si es más corto, se rellena con espacios hasta 32.
-- El índice se ordena con Balanced Merge Sort de 2 vías con 4 archivos temporales. Los tramos iniciales son de 1 registro. En memoria solo se tienen los 2 registros que se están comparando.
 - Al detener la grabación, si quedan notas del órgano encendidas, se graba un `noteOff` para cada una antes de cerrar.
 - `recordings.list` es binario: cada registro tiene el nombre (32 caracteres) y la fecha/hora en milisegundos. Se escribe al final del archivo, así que el orden de lectura es el orden cronológico.
 
