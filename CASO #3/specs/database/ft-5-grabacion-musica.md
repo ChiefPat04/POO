@@ -79,7 +79,9 @@ status: draft
 ## Implementation guidelines
 
 - Archivo: `src/powerband/storage/RecordingStorage.java`, más las constantes en `src/powerband/util/IConstants.java`.
-- Solo `RandomAccessFile` (`writeByte`, `writeLong`, `writeInt`, `writeFloat`, `seek`, `setLength`). Sin dependencias nuevas.
+- Cada registro se arma primero en memoria con `DataOutputStream` sobre un `ByteArrayOutputStream` (así mide exactamente RECORD_SIZE) y luego se escribe de una vez con `RandomAccessFile`. Para leer un registro se usa `DataInputStream` sobre un `ByteArrayInputStream`.
+- `listContainsName` y la lectura de `recordings.list` usan `DataInputStream` sobre `BufferedInputStream` sobre `FileInputStream`, porque es lectura secuencial.
+- `RandomAccessFile` solo se usa donde hay que saltar a una posición (`seek`, `setLength`).
 - Cada operación abre el archivo, hace su trabajo y lo cierra con try-with-resources. Así cada comando queda en disco de inmediato.
 - Todos los métodos que tocan archivos son `synchronized` (llegan eventos de varios hilos).
 - Cada registro se arma completo y se escribe con su relleno, para que nunca quede un registro a medias.
