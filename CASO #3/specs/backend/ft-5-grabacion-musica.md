@@ -85,6 +85,7 @@ status: draft
 - Orden en `save`: validar nombre → revisar unicidad → reescribir encabezado → agregar a la lista → `IRecordingIndexer.add` → `IDLE`. Si `add` falla, la `StorageException` se propaga.
 - Parámetros con prefijo `p`; campos `private`; ningún literal fuera de `IConstants`.
 - Fuera de alcance: implementación del índice (ft-6), cargar y reproducir (ft-7), botones y diálogo del nombre (ft-8), recuperar grabaciones sin cerrar tras un cierre inesperado (quedan con fin `PENDING_POSITION` y sin entrada en lista ni índice).
+- Los comandos se guardan en orden de llegada. Dos eventos casi simultáneos de hilos distintos pueden quedar con tiempos invertidos por pocos ms; el reproductor (ft-7) debe tratar un intervalo negativo como 0.
 
 ## Business workflow
 
