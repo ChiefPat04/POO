@@ -1,7 +1,7 @@
 ---
 id: ft-2
 layer: backend
-status: draft
+status: approved
 ---
 
 # Micrófono → órgano
