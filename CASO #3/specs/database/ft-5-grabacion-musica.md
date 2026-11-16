@@ -1,7 +1,7 @@
 ---
 id: ft-5
 layer: database
-status: draft
+status: approved
 ---
 
 # Grabación de música
