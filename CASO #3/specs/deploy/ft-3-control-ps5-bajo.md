@@ -1,7 +1,7 @@
 ---
 id: ft-3
 layer: deploy
-status: draft
+status: approved
 ---
 
 # Control PS5 → bajo

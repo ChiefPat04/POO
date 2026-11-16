@@ -1,7 +1,7 @@
 ---
 id: ft-3
 layer: testing
-status: draft
+status: approved
 ---
 
 # Control PS5 → bajo
