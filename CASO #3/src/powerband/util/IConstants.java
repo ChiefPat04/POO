@@ -106,7 +106,51 @@ public interface IConstants {
     public static final String EMPTY_RECORDING_NAME = "";
     public static final long RECORDING_MIN_TIME_MS = 0L;
 
+    // ------------------------------------------------------------ escala y rango del bajo
+    public static final int BASS_MIN_NOTE = 28;
+    public static final int BASS_MAX_NOTE = 55;
+    /** Semitonos de cada grado de Do mayor desde Do. */
+    public static final List<Integer> C_MAJOR_SCALE = List.of(0, 2, 4, 5, 7, 9, 11);
+    public static final int OCTAVE_SEMITONES = 12;
+
+    // ------------------------------------------------------------ control PS5 (DualSense)
+    /** Do2: nota del paso 0 de la escala. */
+    public static final int GAMEPAD_ROOT_NOTE = 36;
+    public static final int GAMEPAD_INITIAL_STEP = 0;
+    /** Mi1 = 28. */
+    public static final int GAMEPAD_MIN_STEP = -5;
+    /** Sol3 = 55. */
+    public static final int GAMEPAD_MAX_STEP = 11;
+    public static final int GAMEPAD_STICK_STEP = 1;
+    public static final int GAMEPAD_OCTAVE_STEPS = 7;
+    public static final int GAMEPAD_STEP_CROSS = 0;
+    public static final int GAMEPAD_STEP_CIRCLE = 1;
+    public static final int GAMEPAD_STEP_SQUARE = 2;
+    public static final int GAMEPAD_STEP_TRIANGLE = 3;
+    /** El stick da un paso al pasar este valor y se rearma al volver bajo el otro. */
+    public static final float GAMEPAD_STICK_PUSH_THRESHOLD = 0.6f;
+    public static final float GAMEPAD_STICK_RELEASE_THRESHOLD = 0.3f;
+    /** Valor de un eje o gatillo en reposo. */
+    public static final float GAMEPAD_AXIS_REST = 0f;
+    public static final int GAMEPAD_MIN_DUR_MS = 300;
+    public static final int GAMEPAD_MAX_DUR_MS = 2000;
+    public static final long GAMEPAD_POLL_INTERVAL_MS = 10L;
+    public static final long GAMEPAD_RECONNECT_WAIT_MS = 500L;
+    public static final long GAMEPAD_STOP_TIMEOUT_MS = 1000L;
+    public static final String GAMEPAD_THREAD_NAME = "powerband-gamepad";
+    public static final int GAMEPAD_INDEX = 0;
+    public static final int NO_GAMEPADS = 0;
+
+    // ------------------------------------------------------------ mensajes de consola
+    public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque el bajo con el control. Enter para salir.";
+
     // ------------------------------------------------------------ mensajes de error
+    public static final String ERR_NO_GAMEPAD = "No hay ningún control conectado";
+    public static final String ERR_GAMEPAD_INIT = "No se pudo inicializar la lectura del control";
+    public static final String ERR_GAMEPAD_ALREADY_STARTED = "El control ya está iniciado";
+    public static final String ERR_NULL_READER = "El lector del control no puede ser null";
+    public static final String ERR_GAMEPAD_PLAY = "No se pudo tocar la nota del control: ";
+    public static final String ERR_CONSOLE_READ = "No se pudo leer la consola: ";
     public static final String ERR_STORAGE_READ = "No se pudo leer el archivo: ";
     public static final String ERR_STORAGE_WRITE = "No se pudo escribir el archivo: ";
     public static final String ERR_UNEXPECTED_RECORD_TYPE = "Tipo de registro inesperado: ";
