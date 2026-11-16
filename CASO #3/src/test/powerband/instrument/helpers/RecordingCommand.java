@@ -1,7 +1,7 @@
 package powerband.instrument.helpers;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import powerband.command.ISynthCommand;
 import powerband.command.ISynthEventListener;
@@ -12,7 +12,7 @@ import powerband.model.SynthEvent;
  */
 public class RecordingCommand implements ISynthCommand {
 
-    private final List<SynthEvent> events = new ArrayList<>();
+    private final List<SynthEvent> events = new CopyOnWriteArrayList<>();
 
     @Override
     public void execute(SynthEvent pEvent) {
