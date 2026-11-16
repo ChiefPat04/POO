@@ -141,10 +141,64 @@ public interface IConstants {
     public static final int GAMEPAD_INDEX = 0;
     public static final int NO_GAMEPADS = 0;
 
+    // ------------------------------------------------------------ captura de audio
+    public static final float AUDIO_SAMPLE_RATE = 44100f;
+    public static final int AUDIO_SAMPLE_BITS = 16;
+    public static final int AUDIO_CHANNELS = 1;
+    public static final int AUDIO_BYTES_PER_SAMPLE = 2;
+    public static final boolean AUDIO_SIGNED = true;
+    public static final boolean AUDIO_BIG_ENDIAN = false;
+    /** Muestras por ventana de análisis: unos 46 ms a 44100 Hz. */
+    public static final int AUDIO_BLOCK_SIZE = 2048;
+    /** Divide una muestra de 16 bits para dejarla entre -1 y 1. */
+    public static final float AUDIO_SAMPLE_SCALE = 32768f;
+    public static final int FIRST_INDEX = 0;
+
+    // ------------------------------------------------------------ detección de tono
+    public static final float PITCH_MIN_FREQ = 75f;
+    public static final float PITCH_MAX_FREQ = 2800f;
+    /** Autocorrelación normalizada mínima para aceptar que la señal es periódica. */
+    public static final float PITCH_CLARITY_THRESHOLD = 0.9f;
+    /** Energía media por muestra bajo la cual la ventana se trata como silencio. */
+    public static final float PITCH_MIN_ENERGY = 1e-6f;
+    public static final float NO_PITCH = -1f;
+    public static final int PITCH_FIRST_LAG = 1;
+    public static final int PITCH_LAG_STEP = 1;
+    public static final int PITCH_MAX_LAG_DIVISOR = 2;
+    public static final double NO_CORRELATION = 0.0;
+    public static final double NO_ENERGY = 0.0;
+    public static final double PARABOLA_HALF = 0.5;
+    public static final double PARABOLA_DOUBLE = 2.0;
+
+    // ------------------------------------------------------------ micrófono -> órgano
+    public static final int ORGAN_MIN_NOTE = 40;
+    public static final int ORGAN_MAX_NOTE = 100;
+    public static final int NO_NOTE = -1;
+    /** Volumen RMS para encender; el de apagar es menor (histéresis). Ajustar con el micrófono real. */
+    public static final float MIC_ON_THRESHOLD = 0.02f;
+    public static final float MIC_OFF_THRESHOLD = 0.01f;
+    /** Ventanas seguidas con la misma nota para encenderla. */
+    public static final int MIC_STABLE_WINDOWS = 2;
+    /** Ventanas seguidas de silencio para apagar. */
+    public static final int MIC_OFF_WINDOWS = 3;
+    public static final int MIC_NO_WINDOWS = 0;
+    public static final float MIC_AMP_GAIN = 2f;
+    public static final float MIC_MIN_AMP = 0.1f;
+    public static final float MIC_MAX_AMP = 0.6f;
+    public static final long MIC_RETRY_WAIT_MS = 200L;
+    public static final long MIC_STOP_TIMEOUT_MS = 1000L;
+    public static final String MIC_THREAD_NAME = "powerband-microphone";
+
     // ------------------------------------------------------------ mensajes de consola
-    public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque el bajo con el control. Enter para salir.";
+    public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque los instrumentos. Enter para salir.";
+    public static final String MSG_NO_INSTRUMENTS = "No se pudo iniciar ningún instrumento.";
 
     // ------------------------------------------------------------ mensajes de error
+    public static final String ERR_NO_MICROPHONE = "No se pudo abrir el micrófono";
+    public static final String ERR_MIC_ALREADY_STARTED = "El micrófono ya está iniciado";
+    public static final String ERR_NULL_AUDIO_SOURCE = "La fuente de audio no puede ser null";
+    public static final String ERR_MIC_PLAY = "No se pudo tocar la nota del micrófono: ";
+    public static final String ERR_INSTRUMENT_START = "No se pudo iniciar un instrumento: ";
     public static final String ERR_NO_GAMEPAD = "No hay ningún control conectado";
     public static final String ERR_GAMEPAD_INIT = "No se pudo inicializar la lectura del control";
     public static final String ERR_GAMEPAD_ALREADY_STARTED = "El control ya está iniciado";

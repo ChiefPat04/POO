@@ -1,7 +1,7 @@
 ---
 id: ft-2
 layer: testing
-status: draft
+status: approved
 ---
 
 # Micrófono → órgano
