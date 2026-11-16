@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import powerband.command.helpers.OscMessage;
 import powerband.command.helpers.OscReceiver;
+import powerband.model.SynthAction;
 import powerband.model.SynthEvent;
 import powerband.sc.OscClient;
 
@@ -146,6 +147,60 @@ class OrganCommandTest {
 
             assertNull(receiver.receive());
         }
+    }
+
+    @Test
+    void allNotesOffReleasesEveryActiveNodeAndNotifies() throws Exception {
+        List<SynthEvent> notified = new ArrayList<>();
+        try (OscReceiver receiver = new OscReceiver();
+                OscClient client = new OscClient(SC_HOST, receiver.getPort())) {
+            OrganCommand command = new OrganCommand(client);
+            command.addListener(notified::add);
+            command.execute(SynthEvent.organOn(60));
+            command.execute(SynthEvent.organOn(64));
+
+            command.allNotesOff();
+
+            List<Object> started = new ArrayList<>();
+            List<Object> released = new ArrayList<>();
+            for (OscMessage message : receiver.receiveAll()) {
+                if (OSC_S_NEW.equals(message.getPath())) {
+                    started.add(message.arg(1));
+                } else {
+                    assertEquals(List.of(PARAM_GATE, GATE_OFF), message.getArgs().subList(1, 3));
+                    released.add(message.arg(0));
+                }
+            }
+            assertEquals(2, started.size());
+            assertEquals(2, released.size());
+            assertTrue(released.containsAll(started));
+
+            assertEquals(4, notified.size());
+            assertEquals(SynthAction.NOTE_OFF, notified.get(2).getAction());
+            assertEquals(SynthAction.NOTE_OFF, notified.get(3).getAction());
+            assertEquals(124, notified.get(2).getNote() + notified.get(3).getNote());
+
+            // el mapa quedó vacío: otro noteOff no envía nada
+            command.execute(SynthEvent.organOff(60));
+            command.execute(SynthEvent.organOff(64));
+            assertNull(receiver.receive());
+            assertEquals(4, notified.size());
+        }
+    }
+
+    @Test
+    void allNotesOffWithNoActiveNotesSendsNothing() throws Exception {
+        List<SynthEvent> notified = new ArrayList<>();
+        try (OscReceiver receiver = new OscReceiver();
+                OscClient client = new OscClient(SC_HOST, receiver.getPort())) {
+            OrganCommand command = new OrganCommand(client);
+            command.addListener(notified::add);
+
+            command.allNotesOff();
+
+            assertNull(receiver.receive());
+        }
+        assertTrue(notified.isEmpty());
     }
 
     @Test
