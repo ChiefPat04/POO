@@ -4,7 +4,7 @@ Proyecto en pareja del curso de POO (Caso #3). El enunciado completo está en `d
 
 # Equipo y funcionalidades (*sujeto a cambios*)
 - ft-1 Contratos Bridge y conexión SuperCollider: ambos
-- ft-2 Grabación (.music y .list): Patrick
+- ft-2 Micrófono → órgano: Patrick
 - ft-3 Control PS5 → bajo: Patrick
 - ft-4 Webcam → piano: Elian
 - ft-5 Grabación (.music y .list): Patrick
