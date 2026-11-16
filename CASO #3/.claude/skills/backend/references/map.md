@@ -6,6 +6,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 
 ## Implemented
 - Patrón Bridge, abstracción: `src/powerband/instrument/Instrument.java`
+- Control PS5 → bajo (ft-3): `src/powerband/instrument/GamepadInstrument.java`, con el dispositivo detrás de `IGamepadReader` (`JamepadReader` usa Jamepad)
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
@@ -15,7 +16,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Constantes: `src/powerband/util/IConstants.java`
 
 ## Entrypoints
-- `src/powerband/PowerBandMain.java` (por ahora solo imprime `APP_NAME`)
+- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos y `GamepadInstrument`; termina con Enter, luego `stop()` y `allNotesOff()`)
 
 ## Classes
 ### Instrument
@@ -25,6 +26,30 @@ Abstracta; dispositivo que delega en un `ISynthCommand`. `src/powerband/instrume
 - `start()` — abstracto; empieza a leer el dispositivo (`throws PowerBandException`)
 - `stop()` — abstracto; deja de leer el dispositivo
 - `play(SynthEvent pEvent)` — protegido; ejecuta el evento en el comando
+
+### GamepadInstrument
+`Instrument` del control: hilo daemon que lee cada `GAMEPAD_POLL_INTERVAL_MS`; la base es un entero de pasos de Do mayor desde `GAMEPAD_ROOT_NOTE`. `src/powerband/instrument/GamepadInstrument.java`
+- `GamepadInstrument(ISynthCommand pCommand, IGamepadReader pReader)`
+- `start()` — `reader.open()` y arranca el hilo (`throws DeviceException`; ya iniciado → `IllegalStateException`)
+- `stop()` — detiene el hilo y cierra el lector; idempotente
+- `process(GamepadState pState)` — una lectura: stick/L1/R1 mueven la base, luego cada botón recién presionado dispara `SynthEvent.bass` con `durMs` según R2 (`throws SynthConnectionException`)
+- `stepToNote(int pStep)` — estático; paso de la escala → nota MIDI limitada a 28–55
+
+### IGamepadReader
+Lectura del control. `src/powerband/instrument/IGamepadReader.java`
+- `open()` — inicializa; falla si no hay control (`throws DeviceException`)
+- `read()` — foto del estado; nunca lanza, sin control devuelve `GamepadState.disconnected()`
+- `close()` — libera el dispositivo
+
+### JamepadReader
+`IGamepadReader` real con Jamepad/SDL (`a/b/x/y` = equis/círculo/cuadrado/triángulo). `src/powerband/instrument/JamepadReader.java`
+- `open()`, `read()`, `close()` (`quitSDLGamepad`)
+
+### GamepadState
+Foto inmutable del control. `src/powerband/model/GamepadState.java`
+- `GamepadState(boolean pCross, boolean pCircle, boolean pSquare, boolean pTriangle, boolean pL1, boolean pR1, float pLeftStickX, float pRightTrigger, boolean pConnected)`
+- `disconnected()` / `idle()` — fábricas estáticas
+- getters: `isCross`, `isCircle`, `isSquare`, `isTriangle`, `isL1`, `isR1`, `getLeftStickX`, `getRightTrigger`, `isConnected`
 
 ### ISynthCommand
 Interfaz del Bridge para invocar un synth. `src/powerband/command/ISynthCommand.java`
@@ -100,8 +125,11 @@ Enums `PIANO, BASS, ORGAN` y `TRIGGER, NOTE_ON, NOTE_OFF`. `src/powerband/model/
 ### PowerBandException / SynthConnectionException
 Checked; base y error de conexión local (UDP no detecta scsynth apagado). `src/powerband/exception/`
 
+### DeviceException
+Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicializa. `src/powerband/exception/DeviceException.java`
+
 ### StorageException / DuplicateRecordingNameException
 Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, y nombre ya existente (`DuplicateRecordingNameException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, y mensajes de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, escala y rango del bajo, control PS5, y mensajes de error. `src/powerband/util/IConstants.java`
