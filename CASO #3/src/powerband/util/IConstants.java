@@ -72,7 +72,53 @@ public interface IConstants {
     public static final List<Float> DEFAULT_ORGAN_RATIOS = List.of(1f, 2f, 3f);
     public static final List<Float> DEFAULT_ORGAN_AMPS = List.of(1f, 0.5f, 0.25f);
 
+    // ------------------------------------------------------------ archivos de grabaciones
+    public static final String DATA_DIR = "data";
+    public static final String MUSIC_FILE = DATA_DIR + "/recordings.music";
+    public static final String LIST_FILE = DATA_DIR + "/recordings.list";
+    public static final String FILE_MODE_READ = "r";
+    public static final String FILE_MODE_READ_WRITE = "rw";
+
+    // ------------------------------------------------------------ formato binario de las grabaciones
+    /** Tamaño de todo registro de recordings.music, sea encabezado o comando. */
+    public static final int RECORD_SIZE = 64;
+    public static final int NAME_LENGTH = 32;
+    /** Nombre (32) + fecha en ms (8). */
+    public static final int LIST_RECORD_SIZE = 40;
+    public static final int HEADER_PADDING = 15;
+    public static final int COMMAND_PADDING = 13;
+    public static final long FILE_START = 0L;
+    public static final int RECORD_TYPE_HEADER = 1;
+    public static final int RECORD_TYPE_COMMAND = 2;
+    public static final int SYNTH_CODE_PIANO = 1;
+    public static final int SYNTH_CODE_BASS = 2;
+    public static final int SYNTH_CODE_ORGAN = 3;
+    public static final int ACTION_CODE_TRIGGER = 1;
+    public static final int ACTION_CODE_NOTE_ON = 2;
+    public static final int ACTION_CODE_NOTE_OFF = 3;
+    public static final char NAME_PAD_CHAR = ' ';
+    public static final char NAME_MIN_CHAR = 32;
+    public static final char NAME_MAX_CHAR = 126;
+    public static final int PADDING_BYTE = 0;
+    /** Posición de fin de una grabación que todavía no se ha cerrado. */
+    public static final long PENDING_POSITION = -1L;
+    /** Nombre del encabezado provisional (queda como 32 espacios en disco). */
+    public static final String EMPTY_RECORDING_NAME = "";
+    public static final long RECORDING_MIN_TIME_MS = 0L;
+
     // ------------------------------------------------------------ mensajes de error
+    public static final String ERR_STORAGE_READ = "No se pudo leer el archivo: ";
+    public static final String ERR_STORAGE_WRITE = "No se pudo escribir el archivo: ";
+    public static final String ERR_UNEXPECTED_RECORD_TYPE = "Tipo de registro inesperado: ";
+    public static final String ERR_UNKNOWN_SYNTH_CODE = "Código de synth desconocido: ";
+    public static final String ERR_UNKNOWN_ACTION_CODE = "Código de acción desconocido: ";
+    public static final String ERR_ALREADY_RECORDING = "Ya hay una grabación en curso o pendiente de nombre";
+    public static final String ERR_NOT_RECORDING = "No hay una grabación en curso";
+    public static final String ERR_NO_PENDING_RECORDING = "No hay una grabación pendiente de nombre";
+    public static final String ERR_DUPLICATE_NAME = "Ya existe una grabación con el nombre: ";
+    public static final String ERR_INVALID_NAME = "Nombre de grabación inválido (1 a 32 caracteres ASCII, sin espacios en los extremos): ";
+    public static final String ERR_NULL_STORAGE = "El almacenamiento no puede ser null";
+    public static final String ERR_NULL_INDEXER = "El indexador no puede ser null";
     public static final String ERR_INVALID_PORT = "Puerto fuera de rango: ";
     public static final String ERR_UNKNOWN_HOST = "No se pudo resolver el host: ";
     public static final String ERR_SOCKET_CREATE = "No se pudo crear el socket UDP";
