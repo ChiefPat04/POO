@@ -7,6 +7,7 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 ## Implemented
 - Pruebas de ft-1 sin SuperCollider: un `DatagramSocket` local en puerto efímero hace de scsynth.
 - Pruebas de ft-5 (grabación) sobre archivos en `@TempDir`; nunca tocan `data/`.
+- Pruebas de ft-6 (índice) sobre `@TempDir`: orden después de cada `add`, búsqueda binaria, limpieza de temporales e integración con `Recorder`.
 - Pruebas de ft-2 (micrófono) con señales sintéticas y una fuente de audio falsa. `MicrophoneSource` se prueba a mano con `mvn compile exec:java`.
 - Pruebas de ft-3 (control PS5) con un lector falso; no cargan Jamepad. `JamepadReader` se prueba a mano con `mvn compile exec:java`.
 - Pruebas de ft-4 (webcam) con cuadros generados y una fuente de cuadros falsa; no cargan Webcam Capture. `WebcamSource` se prueba a mano con `mvn compile exec:java`.
@@ -18,6 +19,8 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 - `src/test/powerband/command/BassCommandTest.java` — mensaje `stringBass`, rechazo de otros synths
 - `src/test/powerband/command/OrganCommandTest.java` — noteOn/noteOff, reinicio, `midiToFreq`, concurrencia, `allNotesOff`
 - `src/test/powerband/storage/RecordingStorageTest.java` — formato binario, tamaño fijo, relleno del nombre, reescritura del encabezado, lista, `isValidName`
+- `src/test/powerband/storage/RecordingIndexTest.java` — tamaño fijo, orden tras cada `add` (en orden, inverso, desordenado, 3/5/7/13), mayúsculas, búsqueda del primero/medio/último y de 100 nombres, ausentes, nombre de 32, sin temporales, falla deja el índice igual
+- `src/test/powerband/storage/RecordingIndexRecorderTest.java` — integración: lo que guarda `Recorder` se encuentra con `find` y apunta a su encabezado
 - `src/test/powerband/editor/RecorderTest.java` — flujo start/stop/save/discard, tiempo relativo, noteOff al detener, nombre duplicado o inválido, concurrencia, falla de escritura
 - `src/test/powerband/command/SynthCommandListenerTest.java` — notificación y remoción de listeners
 - `src/test/powerband/instrument/InstrumentTest.java` — delegación del Bridge y `setCommand`

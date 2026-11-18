@@ -76,6 +76,10 @@ public interface IConstants {
     public static final String DATA_DIR = "data";
     public static final String MUSIC_FILE = DATA_DIR + "/recordings.music";
     public static final String LIST_FILE = DATA_DIR + "/recordings.list";
+    public static final String INDEX_FILE = DATA_DIR + "/recordings.index";
+    /** Los 4 archivos temporales del Balanced Merge Sort de 2 vías. */
+    public static final List<String> MERGE_TEMP_FILES =
+            List.of("merge1.tmp", "merge2.tmp", "merge3.tmp", "merge4.tmp");
     public static final String FILE_MODE_READ = "r";
     public static final String FILE_MODE_READ_WRITE = "rw";
 
@@ -85,6 +89,21 @@ public interface IConstants {
     public static final int NAME_LENGTH = 32;
     /** Nombre (32) + fecha en ms (8). */
     public static final int LIST_RECORD_SIZE = 40;
+    /** Registro de recordings.index: nombre (32) + posición del encabezado (8). */
+    public static final int INDEX_RECORD_SIZE = 40;
+    /** Balanced Merge Sort: tramos iniciales de 1 registro que se duplican en cada pasada. */
+    public static final long MERGE_INITIAL_RUN = 1L;
+    public static final long MERGE_RUN_GROWTH = 2L;
+    /** Mezcla de 2 vías: 2 archivos de entrada y 2 de salida por pasada. */
+    public static final int MERGE_WAYS = 2;
+    /** Desplazamiento del segundo archivo dentro de un par (entradas o salidas). */
+    public static final int MERGE_SECOND_OFFSET = 1;
+    public static final long EMPTY_COUNT = 0L;
+    /** Divisor para tomar el punto medio en la búsqueda binaria. */
+    public static final long SEARCH_HALF = 2L;
+    public static final long SEARCH_STEP = 1L;
+    /** Resultado de compareTo cuando los dos nombres son iguales. */
+    public static final int SAME_NAME = 0;
     public static final int HEADER_PADDING = 15;
     public static final int COMMAND_PADDING = 13;
     public static final long FILE_START = 0L;
@@ -253,6 +272,12 @@ public interface IConstants {
     public static final String ERR_CONSOLE_READ = "No se pudo leer la consola: ";
     public static final String ERR_STORAGE_READ = "No se pudo leer el archivo: ";
     public static final String ERR_STORAGE_WRITE = "No se pudo escribir el archivo: ";
+    public static final String ERR_INDEX_SORT = "No se pudo ordenar el índice: ";
+    public static final String ERR_INDEX_READ = "No se pudo leer el índice: ";
+    public static final String ERR_INDEX_WRITE = "No se pudo escribir el índice: ";
+    public static final String ERR_NULL_INDEX_FILE = "El archivo del índice y la carpeta de temporales no pueden ser null";
+    public static final String ERR_TEMP_DELETE = "No se pudo borrar el archivo temporal: ";
+    public static final String ERR_INDEX_OUT_OF_RANGE = "Posición fuera del índice: ";
     public static final String ERR_UNEXPECTED_RECORD_TYPE = "Tipo de registro inesperado: ";
     public static final String ERR_UNKNOWN_SYNTH_CODE = "Código de synth desconocido: ";
     public static final String ERR_UNKNOWN_ACTION_CODE = "Código de acción desconocido: ";

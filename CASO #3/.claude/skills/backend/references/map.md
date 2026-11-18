@@ -12,7 +12,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
-- Contrato del índice (lo implementa ft-6): `src/powerband/storage/IRecordingIndexer.java`
+- Contrato del índice (lo implementa `RecordingIndex`, ft-6; ver mapa de database): `src/powerband/storage/IRecordingIndexer.java`
 - Evento musical inmutable, enums, encabezado de grabación y entrada de lista: `src/powerband/model/`
 - Excepciones checked: `src/powerband/exception/`
 - Constantes: `src/powerband/util/IConstants.java`
@@ -152,6 +152,10 @@ Interfaz del índice por nombre. `src/powerband/storage/IRecordingIndexer.java`
 Inmutable. `src/powerband/model/RecordingHeader.java`
 - `RecordingHeader(String pName, long pStartPosition, long pEndPosition)`; `getName()`, `getStartPosition()`, `getEndPosition()`
 
+### IndexEntry
+Inmutable: registro de `recordings.index`. `src/powerband/model/IndexEntry.java`
+- `IndexEntry(String pName, long pHeaderPosition)`; `getName()`, `getHeaderPosition()`
+
 ### ListEntry
 Inmutable. `src/powerband/model/ListEntry.java`
 - `ListEntry(String pName, long pCreatedAtMs)`; `getName()`, `getCreatedAtMs()`
@@ -187,4 +191,4 @@ Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicia
 Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, y nombre ya existente (`DuplicateRecordingNameException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), y mensajes de consola y de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), y mensajes de consola y de error. `src/powerband/util/IConstants.java`
