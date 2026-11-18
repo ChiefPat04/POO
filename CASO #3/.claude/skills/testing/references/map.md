@@ -6,15 +6,23 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 
 ## Implemented
 - Pruebas de ft-1 sin SuperCollider: un `DatagramSocket` local en puerto efímero hace de scsynth.
+- Pruebas de ft-5 (grabación) sobre archivos en `@TempDir`; nunca tocan `data/`.
+- Pruebas de ft-2 (micrófono) con señales sintéticas y una fuente de audio falsa. `MicrophoneSource` se prueba a mano con `mvn compile exec:java`.
+- Pruebas de ft-3 (control PS5) con un lector falso; no cargan Jamepad. `JamepadReader` se prueba a mano con `mvn compile exec:java`.
 
 ## Test classes
 - `src/test/powerband/sc/OscClientTest.java` — formato OSC, nodeIds únicos con hilos, puerto inválido, host `.invalid`
 - `src/test/powerband/model/SynthEventTest.java` — fábricas, valores por defecto, `withTimeMs`
 - `src/test/powerband/command/PianoCommandTest.java` — mensaje `classicPiano`, rechazo de otros synths
 - `src/test/powerband/command/BassCommandTest.java` — mensaje `stringBass`, rechazo de otros synths
-- `src/test/powerband/command/OrganCommandTest.java` — noteOn/noteOff, reinicio, `midiToFreq`, concurrencia
+- `src/test/powerband/command/OrganCommandTest.java` — noteOn/noteOff, reinicio, `midiToFreq`, concurrencia, `allNotesOff`
+- `src/test/powerband/storage/RecordingStorageTest.java` — formato binario, tamaño fijo, relleno del nombre, reescritura del encabezado, lista, `isValidName`
+- `src/test/powerband/editor/RecorderTest.java` — flujo start/stop/save/discard, tiempo relativo, noteOff al detener, nombre duplicado o inválido, concurrencia, falla de escritura
 - `src/test/powerband/command/SynthCommandListenerTest.java` — notificación y remoción de listeners
 - `src/test/powerband/instrument/InstrumentTest.java` — delegación del Bridge y `setCommand`
+- `src/test/powerband/instrument/PitchDetectorTest.java` — 440 Hz, cada semitono de 40 a 100, armónicos, silencio, ruido, RMS, redondeo a MIDI
+- `src/test/powerband/instrument/MicrophoneInstrumentTest.java` — encendido tras ventanas estables, cambio de nota, apagado por silencio, histéresis, amp, fuera de rango, una sola nota, ciclo de vida del hilo
+- `src/test/powerband/instrument/GamepadInstrumentTest.java` — botones → notas, flanco, stick con histéresis, octavas, límites 28–55, duración por R2, ciclo de vida del hilo y reconexión
 
 ## Helpers
 ### OscReceiver
@@ -31,6 +39,23 @@ Path + args decodificados. `src/test/powerband/command/helpers/OscMessage.java`
 `Instrument` sin dispositivo. `src/test/powerband/instrument/helpers/FakeInstrument.java`
 - `playEvent(SynthEvent pEvent)` — llama `play`
 
+### FakeIndexer
+`IRecordingIndexer` que guarda las llamadas. `src/test/powerband/editor/helpers/FakeIndexer.java`
+- `add(String pName, long pHeaderPosition)`
+- `getNames()`, `getPositions()`
+
+### TestSignals
+Bloques sintéticos de `AUDIO_BLOCK_SIZE`. `src/test/powerband/instrument/helpers/TestSignals.java`
+- `sine(float pFrequency, float pAmplitude)`, `harmonics(float pFrequency, float pAmplitude)`, `silence()`, `noise(long pSeed, float pAmplitude)`, `noteFrequency(int pNote)` — estáticos
+
+### FakeAudioSource
+`IAudioSource` falso que repite un bloque. `src/test/powerband/instrument/helpers/FakeAudioSource.java`
+- `setBlock(float[] pBlock)`, `setHasAudio(boolean pHasAudio)`, `setFailOnOpen(boolean pFail)`, `isClosed()`
+
+### FakeGamepadReader
+`IGamepadReader` falso. `src/test/powerband/instrument/helpers/FakeGamepadReader.java`
+- `setState(GamepadState pState)`, `setFailOnOpen(boolean pFail)`, `getReadCount()`, `isClosed()`
+
 ### RecordingCommand
-`ISynthCommand` que guarda eventos. `src/test/powerband/instrument/helpers/RecordingCommand.java`
+`ISynthCommand` que guarda eventos (lista segura para hilos). `src/test/powerband/instrument/helpers/RecordingCommand.java`
 - `getEvents()`

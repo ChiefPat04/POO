@@ -45,6 +45,20 @@ public class OrganCommand extends SynthCommand {
         return (float) (FREQ_A4 * Math.pow(FREQ_BASE, (pNote - MIDI_A4) / SEMITONES_PER_OCTAVE));
     }
 
+    /**
+     * Apaga todas las notas encendidas. Cada una pasa por {@link #execute} para que
+     * los listeners (el grabador) reciban su noteOff.
+     */
+    public void allNotesOff() throws SynthConnectionException {
+        Integer[] notes;
+        synchronized (this) {
+            notes = activeNodes.keySet().toArray(new Integer[activeNodes.size()]);
+        }
+        for (Integer note : notes) {
+            execute(SynthEvent.organOff(note));
+        }
+    }
+
     @Override
     protected void validate(SynthEvent pEvent) {
         requireSynth(pEvent, SynthType.ORGAN);

@@ -94,9 +94,14 @@ public final class SynthEvent {
                 UNUSED_INT, UNUSED_INT, pAmp, pRatios, pAmps);
     }
 
-    public static SynthEvent organOn(int pNote) {
-        return organOn(pNote, DEFAULT_ORGAN_AMP,
+    /** Enciende una nota del órgano con los ratios y amplitudes por defecto. */
+    public static SynthEvent organOn(int pNote, float pAmp) {
+        return organOn(pNote, pAmp,
                 toArray(DEFAULT_ORGAN_RATIOS), toArray(DEFAULT_ORGAN_AMPS));
+    }
+
+    public static SynthEvent organOn(int pNote) {
+        return organOn(pNote, DEFAULT_ORGAN_AMP);
     }
 
     public static SynthEvent organOff(int pNote) {
