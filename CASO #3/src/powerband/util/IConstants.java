@@ -189,6 +189,47 @@ public interface IConstants {
     public static final long MIC_STOP_TIMEOUT_MS = 1000L;
     public static final String MIC_THREAD_NAME = "powerband-microphone";
 
+    // ------------------------------------------------------------ webcam -> piano
+    public static final int PIANO_MIN_NOTE = 48;
+    public static final int PIANO_MAX_NOTE = 72;
+    /** Do3: nota del paso 0 (abajo de la imagen). */
+    public static final int PIANO_ROOT_NOTE = 48;
+    /** Dos octavas de Do mayor: pasos 0..14 (Do3..Do5). */
+    public static final int CAM_MAX_STEP = 14;
+    /** Franjas de igual alto en la imagen: una por nota. */
+    public static final int CAM_NOTE_BANDS = CAM_MAX_STEP + 1;
+    /** Cuadrícula a la que se reduce cada cuadro antes de compararlo. */
+    public static final int CAM_GRID_WIDTH = 64;
+    public static final int CAM_GRID_HEIGHT = 48;
+    /** Diferencia de gris (0..255) para contar un píxel como cambiado. Ajustar con la cámara real. */
+    public static final int CAM_PIXEL_THRESHOLD = 30;
+    /** Banda del raster gris. */
+    public static final int CAM_GRAY_BAND = 0;
+    /** Espejar la imagen para que la izquierda sea la del usuario frente a la cámara. */
+    public static final boolean CAM_MIRROR = true;
+    /** Desplazamiento al centro de una celda de la cuadrícula. */
+    public static final float CAM_PIXEL_CENTER = 0.5f;
+    /** Límites de una coordenada normalizada. */
+    public static final float CAM_NORMALIZED_MIN = 0f;
+    public static final float CAM_NORMALIZED_MAX = 1f;
+    public static final float CAM_NO_MOTION = 0f;
+    /** Fracción de la cuadrícula que cambió. Ajustar con la cámara, la luz y la distancia reales. */
+    public static final float CAM_MIN_MOTION = 0.01f;
+    public static final float CAM_REARM_MOTION = 0.02f;
+    public static final float CAM_STRIKE_MOTION = 0.06f;
+    /** Más que esto es un cambio de luz o de la cámara, no la mano. */
+    public static final float CAM_MAX_MOTION = 0.5f;
+    /** A la izquierda de esta x el acorde es mayor; a la derecha, menor. */
+    public static final float CAM_SPLIT_X = 0.5f;
+    public static final int CAM_DUR_MS = 1000;
+    public static final float CAM_AMP_GAIN = 4f;
+    public static final float CAM_MIN_AMP = 0.15f;
+    public static final float CAM_MAX_AMP = 0.6f;
+    public static final long CAM_POLL_INTERVAL_MS = 33L;
+    public static final long CAM_RETRY_WAIT_MS = 500L;
+    public static final long CAM_STOP_TIMEOUT_MS = 1000L;
+    public static final String CAM_THREAD_NAME = "powerband-webcam";
+
     // ------------------------------------------------------------ mensajes de consola
     public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque los instrumentos. Enter para salir.";
     public static final String MSG_NO_INSTRUMENTS = "No se pudo iniciar ningún instrumento.";
@@ -199,6 +240,11 @@ public interface IConstants {
     public static final String ERR_NULL_AUDIO_SOURCE = "La fuente de audio no puede ser null";
     public static final String ERR_MIC_PLAY = "No se pudo tocar la nota del micrófono: ";
     public static final String ERR_INSTRUMENT_START = "No se pudo iniciar un instrumento: ";
+    public static final String ERR_NO_WEBCAM = "No hay ninguna webcam disponible";
+    public static final String ERR_WEBCAM_OPEN = "No se pudo abrir la webcam";
+    public static final String ERR_WEBCAM_ALREADY_STARTED = "La webcam ya está iniciada";
+    public static final String ERR_NULL_FRAME_SOURCE = "La fuente de cuadros no puede ser null";
+    public static final String ERR_WEBCAM_PLAY = "No se pudo tocar el acorde de la webcam: ";
     public static final String ERR_NO_GAMEPAD = "No hay ningún control conectado";
     public static final String ERR_GAMEPAD_INIT = "No se pudo inicializar la lectura del control";
     public static final String ERR_GAMEPAD_ALREADY_STARTED = "El control ya está iniciado";

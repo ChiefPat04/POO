@@ -9,6 +9,7 @@ Source: `pom.xml` (Maven build, `mainClass` = `powerband.PowerBandMain`), `readm
 - `exec-maven-plugin` para `mvn compile exec:java`.
 - Surefire 3.5.2 para `mvn test`.
 - Dependencia `com.badlogicgames.jamepad:jamepad:2.30.0.0` (control PS5, ft-3); trae las nativas de SDL dentro del jar.
+- Dependencia `com.github.sarxos:webcam-capture:0.3.12` (webcam, ft-4); trae BridJ con las nativas y `slf4j-api` (sin binding imprime un aviso inofensivo).
 - No hay archivos de pipeline CI.
 
 ## Build files

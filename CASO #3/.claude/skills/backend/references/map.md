@@ -8,6 +8,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Patrón Bridge, abstracción: `src/powerband/instrument/Instrument.java`
 - Micrófono → órgano (ft-2): `src/powerband/instrument/MicrophoneInstrument.java`, con la captura detrás de `IAudioSource` (`MicrophoneSource` usa `javax.sound.sampled`) y la detección de nota en `PitchDetector.java`
 - Control PS5 → bajo (ft-3): `src/powerband/instrument/GamepadInstrument.java`, con el dispositivo detrás de `IGamepadReader` (`JamepadReader` usa Jamepad)
+- Webcam → piano (ft-4): `src/powerband/instrument/WebcamInstrument.java`, con la cámara detrás de `IFrameSource` (`WebcamSource` usa Webcam Capture) y la detección de movimiento en `HandTracker.java`
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
@@ -17,7 +18,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Constantes: `src/powerband/util/IConstants.java`
 
 ## Entrypoints
-- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos, `GamepadInstrument` y `MicrophoneInstrument`; si uno no inicia se informa y los demás siguen; termina con Enter, luego `stop()` de los iniciados y `allNotesOff()`)
+- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos, `GamepadInstrument`, `MicrophoneInstrument` y `WebcamInstrument`; si uno no inicia se informa y los demás siguen; termina con Enter, luego `stop()` de los iniciados y `allNotesOff()`)
 
 ## Classes
 ### Instrument
@@ -59,6 +60,35 @@ Autocorrelación normalizada con interpolación parabólica. `src/powerband/inst
 - `detectFrequency(float[] pSamples)` — Hz, o `NO_PITCH` si no es periódica o sale de `PITCH_MIN_FREQ`..`PITCH_MAX_FREQ`
 - `rms(float[] pSamples)` — volumen de la ventana
 - `toMidiNote(float pFrequency)` — semitono más cercano
+
+### WebcamInstrument
+`Instrument` de la webcam: hilo daemon que lee un cuadro cada `CAM_POLL_INTERVAL_MS`; un disparo por golpe, con histéresis de movimiento. `src/powerband/instrument/WebcamInstrument.java`
+- `WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource)`
+- `start()` — `source.open()` y arranca el hilo (`throws DeviceException`; ya iniciado → `IllegalStateException`)
+- `stop()` — detiene el hilo y cierra la fuente; idempotente
+- `process(HandReading pReading)` — movimiento ≥ `CAM_STRIKE_MOTION` y armado → `SynthEvent.piano` (nota por altura, tercera por lado, amp por movimiento, `CAM_DUR_MS`); se rearma con movimiento < `CAM_REARM_MOTION` o mano ausente (`throws SynthConnectionException`)
+- `heightToNote(float pY)` — estático; altura 0..1 (0 = arriba) → nota de Do mayor 48–72 en 15 franjas
+
+### IFrameSource
+Fuente de cuadros de video. `src/powerband/instrument/IFrameSource.java`
+- `open()` — (`throws DeviceException`)
+- `read()` — cuadro `BufferedImage` o `null` si no hay; nunca lanza
+- `close()`
+
+### WebcamSource
+`IFrameSource` real: `Webcam.getDefault()` a QVGA (320×240) con Webcam Capture 0.3.12. `src/powerband/instrument/WebcamSource.java`
+- `open()`, `read()`, `close()`
+
+### HandTracker
+Diferencia entre cuadros en una cuadrícula gris de `CAM_GRID_WIDTH × CAM_GRID_HEIGHT`; centro de los píxeles que cambiaron, espejado si `CAM_MIRROR`. `src/powerband/instrument/HandTracker.java`
+- `HandTracker(int pGridWidth, int pGridHeight)`
+- `track(BufferedImage pFrame)` — `HandReading` con x, y y fracción que cambió; ausente en el primer cuadro o si el cambio sale de `CAM_MIN_MOTION`..`CAM_MAX_MOTION`
+- `reset()` — olvida el cuadro anterior
+
+### HandReading
+Inmutable: dónde se movió la mano en un cuadro. `src/powerband/model/HandReading.java`
+- `HandReading(boolean pPresent, float pX, float pY, float pMotion)`; `absent()` — fábrica estática
+- getters: `isPresent`, `getX`, `getY`, `getMotion`
 
 ### IGamepadReader
 Lectura del control. `src/powerband/instrument/IGamepadReader.java`
@@ -157,4 +187,4 @@ Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicia
 Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, y nombre ya existente (`DuplicateRecordingNameException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, y mensajes de consola y de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), y mensajes de consola y de error. `src/powerband/util/IConstants.java`

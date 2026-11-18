@@ -21,25 +21,29 @@ import powerband.instrument.Instrument;
 import powerband.instrument.JamepadReader;
 import powerband.instrument.MicrophoneInstrument;
 import powerband.instrument.MicrophoneSource;
+import powerband.instrument.WebcamInstrument;
+import powerband.instrument.WebcamSource;
 import powerband.sc.OscClient;
 
 /**
  * Entrada provisional (la reemplaza la ventana del editor, ft-8): conecta con
- * SuperCollider e inicia el control (bajo) y el micrófono (órgano) hasta que se
- * presione Enter. Si un instrumento no inicia, se informa y los demás siguen.
+ * SuperCollider e inicia el control (bajo), el micrófono (órgano) y la webcam
+ * (piano) hasta que se presione Enter. Si un instrumento no inicia, se informa y
+ * los demás siguen.
  */
 public class PowerBandMain {
 
     public static void main(String[] pArgs) {
         System.out.println(APP_NAME);
         try (OscClient client = new OscClient(SC_HOST, SC_PORT)) {
-            PianoCommand piano = new PianoCommand(client); // todavía sin instrumento (ft-4)
+            PianoCommand piano = new PianoCommand(client);
             BassCommand bass = new BassCommand(client);
             OrganCommand organ = new OrganCommand(client);
 
             List<Instrument> instruments = List.of(
                     new GamepadInstrument(bass, new JamepadReader()),
-                    new MicrophoneInstrument(organ, new MicrophoneSource()));
+                    new MicrophoneInstrument(organ, new MicrophoneSource()),
+                    new WebcamInstrument(piano, new WebcamSource()));
             List<Instrument> started = new ArrayList<>();
             try {
                 for (Instrument instrument : instruments) {
