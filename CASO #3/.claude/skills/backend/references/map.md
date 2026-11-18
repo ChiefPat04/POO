@@ -12,6 +12,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
+- Cargar y reproducir (ft-7): lista cronológica y carga por nombre en `src/powerband/editor/RecordingLibrary.java`; reproductor con hilo propio en `src/powerband/editor/Player.java`
 - Contrato del índice (lo implementa `RecordingIndex`, ft-6; ver mapa de database): `src/powerband/storage/IRecordingIndexer.java`
 - Evento musical inmutable, enums, encabezado de grabación y entrada de lista: `src/powerband/model/`
 - Excepciones checked: `src/powerband/exception/`
@@ -144,6 +145,25 @@ Abstracta; listeners en `CopyOnWriteArrayList` y template method. `src/powerband
 - `onSynthEvent(SynthEvent pEvent)` — si está grabando, escribe el evento con tiempo relativo (mínimo 0)
 - `isRecording()`, `isPendingName()`, `getStartTimeMs()`
 
+### RecordingLibrary
+Lista cronológica (desde `recordings.list`, un registro a la vez) y carga por nombre con la búsqueda binaria de `RecordingIndex`. `src/powerband/editor/RecordingLibrary.java`
+- `RecordingLibrary(RecordingStorage pStorage, RecordingIndex pIndex)` — null → `IllegalArgumentException`
+- `listCount()` — cantidad de grabaciones (`throws StorageException`)
+- `listEntry(long pIndex)` — grabación número `pIndex` en orden cronológico (`throws StorageException`)
+- `load(String pName)` — `RecordingHeader` de esa grabación (`throws StorageException, RecordingNotFoundException`)
+
+### Player
+Reproduce con los mismos `ISynthCommand` de los instrumentos (Bridge): lee un comando a la vez de `recordings.music`, espera hasta `inicio + timeMs` y lo envía al comando de su synth (`switch` sobre `SynthType`). Lleva las notas del órgano encendidas y las apaga al terminar o detenerse. `src/powerband/editor/Player.java`
+- `Player(RecordingStorage pStorage, ISynthCommand pPiano, ISynthCommand pBass, ISynthCommand pOrgan)`
+- `play(RecordingHeader pHeader)` — reproduce en el hilo que llama (`throws StorageException, InterruptedException`)
+- `start(RecordingHeader pHeader)` — reproduce en un hilo daemon `PLAYER_THREAD_NAME`; con otra en curso → `IllegalStateException`
+- `stop()` — interrumpe y espera el hilo; idempotente
+- `isPlaying()`, `setListener(IPlaybackListener pListener)`
+
+### IPlaybackListener
+Aviso de fin de reproducción (para la ventana de ft-8). `src/powerband/editor/IPlaybackListener.java`
+- `onPlaybackFinished(String pName)`
+
 ### IRecordingIndexer
 Interfaz del índice por nombre. `src/powerband/storage/IRecordingIndexer.java`
 - `add(String pName, long pHeaderPosition)` — (`throws StorageException`)
@@ -187,8 +207,8 @@ Checked; base y error de conexión local (UDP no detecta scsynth apagado). `src/
 ### DeviceException
 Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicializa. `src/powerband/exception/DeviceException.java`
 
-### StorageException / DuplicateRecordingNameException
-Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, y nombre ya existente (`DuplicateRecordingNameException(String pName)`). `src/powerband/exception/`
+### StorageException / DuplicateRecordingNameException / RecordingNotFoundException
+Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, nombre ya existente (`DuplicateRecordingNameException(String pName)`) y nombre que no está en el índice (`RecordingNotFoundException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), y mensajes de consola y de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), reproductor, y mensajes de consola y de error. `src/powerband/util/IConstants.java`

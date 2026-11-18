@@ -7,6 +7,7 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 ## Implemented
 - Pruebas de ft-1 sin SuperCollider: un `DatagramSocket` local en puerto efímero hace de scsynth.
 - Pruebas de ft-5 (grabación) sobre archivos en `@TempDir`; nunca tocan `data/`.
+- Pruebas de ft-7 (cargar y reproducir) sobre `@TempDir` con comandos falsos que anotan la hora de llegada; intervalos con tolerancia `PLAYER_TIMING_TOLERANCE_MS`.
 - Pruebas de ft-6 (índice) sobre `@TempDir`: orden después de cada `add`, búsqueda binaria, limpieza de temporales e integración con `Recorder`.
 - Pruebas de ft-2 (micrófono) con señales sintéticas y una fuente de audio falsa. `MicrophoneSource` se prueba a mano con `mvn compile exec:java`.
 - Pruebas de ft-3 (control PS5) con un lector falso; no cargan Jamepad. `JamepadReader` se prueba a mano con `mvn compile exec:java`.
@@ -21,6 +22,8 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 - `src/test/powerband/storage/RecordingStorageTest.java` — formato binario, tamaño fijo, relleno del nombre, reescritura del encabezado, lista, `isValidName`
 - `src/test/powerband/storage/RecordingIndexTest.java` — tamaño fijo, orden tras cada `add` (en orden, inverso, desordenado, 3/5/7/13), mayúsculas, búsqueda del primero/medio/último y de 100 nombres, ausentes, nombre de 32, sin temporales, falla deja el índice igual
 - `src/test/powerband/storage/RecordingIndexRecorderTest.java` — integración: lo que guarda `Recorder` se encuentra con `find` y apunta a su encabezado
+- `src/test/powerband/editor/RecordingLibraryTest.java` — orden cronológico, carga por nombre, nombre inexistente, mayúsculas
+- `src/test/powerband/editor/PlayerTest.java` — synth destino y orden, solo la grabación elegida, intervalos, independiente del momento de carga, grabación vacía, hilo y aviso, `stop` apaga el órgano, doble `start`, falla de envío
 - `src/test/powerband/editor/RecorderTest.java` — flujo start/stop/save/discard, tiempo relativo, noteOff al detener, nombre duplicado o inválido, concurrencia, falla de escritura
 - `src/test/powerband/command/SynthCommandListenerTest.java` — notificación y remoción de listeners
 - `src/test/powerband/instrument/InstrumentTest.java` — delegación del Bridge y `setCommand`
@@ -61,6 +64,16 @@ Bloques sintéticos de `AUDIO_BLOCK_SIZE`. `src/test/powerband/instrument/helper
 ### FakeGamepadReader
 `IGamepadReader` falso. `src/test/powerband/instrument/helpers/FakeGamepadReader.java`
 - `setState(GamepadState pState)`, `setFailOnOpen(boolean pFail)`, `getReadCount()`, `isClosed()`
+
+### TimedCommand
+`ISynthCommand` falso que anota cada evento con la hora de llegada. `src/test/powerband/editor/helpers/TimedCommand.java`
+- `getEvents()`, `getTimes()`, `setFailing(boolean pFail)`
+
+### RecordingFiles
+Storage + índice reales en una carpeta. `src/test/powerband/editor/helpers/RecordingFiles.java`
+- `RecordingFiles(File pDir)`
+- `save(String pName, SynthEvent... pEvents)` — escribe encabezado, comandos, lista e índice; devuelve el `RecordingHeader`
+- `getStorage()`, `getIndex()`, `library()`
 
 ### TestFrames
 Cuadros 320×240 generados. `src/test/powerband/instrument/helpers/TestFrames.java`

@@ -249,6 +249,13 @@ public interface IConstants {
     public static final long CAM_STOP_TIMEOUT_MS = 1000L;
     public static final String CAM_THREAD_NAME = "powerband-webcam";
 
+    // ------------------------------------------------------------ reproductor
+    public static final String PLAYER_THREAD_NAME = "powerband-player";
+    public static final long PLAYER_STOP_TIMEOUT_MS = 1000L;
+    public static final long PLAYER_NO_WAIT_MS = 0L;
+    /** Margen aceptado entre el intervalo grabado y el reproducido (lo usan las pruebas). */
+    public static final long PLAYER_TIMING_TOLERANCE_MS = 30L;
+
     // ------------------------------------------------------------ mensajes de consola
     public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque los instrumentos. Enter para salir.";
     public static final String MSG_NO_INSTRUMENTS = "No se pudo iniciar ningún instrumento.";
@@ -284,6 +291,12 @@ public interface IConstants {
     public static final String ERR_ALREADY_RECORDING = "Ya hay una grabación en curso o pendiente de nombre";
     public static final String ERR_NOT_RECORDING = "No hay una grabación en curso";
     public static final String ERR_NO_PENDING_RECORDING = "No hay una grabación pendiente de nombre";
+    public static final String ERR_RECORDING_NOT_FOUND = "No existe una grabación con el nombre: ";
+    public static final String ERR_ALREADY_PLAYING = "Ya hay una reproducción en curso";
+    public static final String ERR_PLAYER_SEND = "No se pudo enviar un comando de la grabación: ";
+    public static final String ERR_PLAYER_READ = "No se pudo leer la grabación: ";
+    public static final String ERR_NULL_HEADER = "El encabezado no puede ser null";
+    public static final String ERR_NULL_LIBRARY_DEPENDENCY = "El almacenamiento y el índice no pueden ser null";
     public static final String ERR_DUPLICATE_NAME = "Ya existe una grabación con el nombre: ";
     public static final String ERR_INVALID_NAME = "Nombre de grabación inválido (1 a 32 caracteres ASCII, sin espacios en los extremos): ";
     public static final String ERR_NULL_STORAGE = "El almacenamiento no puede ser null";
