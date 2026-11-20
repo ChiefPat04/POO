@@ -8,16 +8,18 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Patrón Bridge, abstracción: `src/powerband/instrument/Instrument.java`
 - Micrófono → órgano (ft-2): `src/powerband/instrument/MicrophoneInstrument.java`, con la captura detrás de `IAudioSource` (`MicrophoneSource` usa `javax.sound.sampled`) y la detección de nota en `PitchDetector.java`
 - Control PS5 → bajo (ft-3): `src/powerband/instrument/GamepadInstrument.java`, con el dispositivo detrás de `IGamepadReader` (`JamepadReader` usa Jamepad)
+- Webcam → piano (ft-4): `src/powerband/instrument/WebcamInstrument.java`, con la cámara detrás de `IFrameSource` (`WebcamSource` usa Webcam Capture) y la detección de movimiento en `HandTracker.java`
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
-- Contrato del índice (lo implementa ft-6): `src/powerband/storage/IRecordingIndexer.java`
+- Cargar y reproducir (ft-7): lista cronológica y carga por nombre en `src/powerband/editor/RecordingLibrary.java`; reproductor con hilo propio en `src/powerband/editor/Player.java`
+- Contrato del índice (lo implementa `RecordingIndex`, ft-6; ver mapa de database): `src/powerband/storage/IRecordingIndexer.java`
 - Evento musical inmutable, enums, encabezado de grabación y entrada de lista: `src/powerband/model/`
 - Excepciones checked: `src/powerband/exception/`
 - Constantes: `src/powerband/util/IConstants.java`
 
 ## Entrypoints
-- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos, `GamepadInstrument` y `MicrophoneInstrument`; si uno no inicia se informa y los demás siguen; termina con Enter, luego `stop()` de los iniciados y `allNotesOff()`)
+- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos, `GamepadInstrument`, `MicrophoneInstrument` y `WebcamInstrument`; si uno no inicia se informa y los demás siguen; termina con Enter, luego `stop()` de los iniciados y `allNotesOff()`)
 
 ## Classes
 ### Instrument
@@ -59,6 +61,35 @@ Autocorrelación normalizada con interpolación parabólica. `src/powerband/inst
 - `detectFrequency(float[] pSamples)` — Hz, o `NO_PITCH` si no es periódica o sale de `PITCH_MIN_FREQ`..`PITCH_MAX_FREQ`
 - `rms(float[] pSamples)` — volumen de la ventana
 - `toMidiNote(float pFrequency)` — semitono más cercano
+
+### WebcamInstrument
+`Instrument` de la webcam: hilo daemon que lee un cuadro cada `CAM_POLL_INTERVAL_MS`; un disparo por golpe, con histéresis de movimiento. `src/powerband/instrument/WebcamInstrument.java`
+- `WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource)`
+- `start()` — `source.open()` y arranca el hilo (`throws DeviceException`; ya iniciado → `IllegalStateException`)
+- `stop()` — detiene el hilo y cierra la fuente; idempotente
+- `process(HandReading pReading)` — movimiento ≥ `CAM_STRIKE_MOTION` y armado → `SynthEvent.piano` (nota por altura, tercera por lado, amp por movimiento, `CAM_DUR_MS`); se rearma con movimiento < `CAM_REARM_MOTION` o mano ausente (`throws SynthConnectionException`)
+- `heightToNote(float pY)` — estático; altura 0..1 (0 = arriba) → nota de Do mayor 48–72 en 15 franjas
+
+### IFrameSource
+Fuente de cuadros de video. `src/powerband/instrument/IFrameSource.java`
+- `open()` — (`throws DeviceException`)
+- `read()` — cuadro `BufferedImage` o `null` si no hay; nunca lanza
+- `close()`
+
+### WebcamSource
+`IFrameSource` real: `Webcam.getDefault()` a QVGA (320×240) con Webcam Capture 0.3.12. `src/powerband/instrument/WebcamSource.java`
+- `open()`, `read()`, `close()`
+
+### HandTracker
+Diferencia entre cuadros en una cuadrícula gris de `CAM_GRID_WIDTH × CAM_GRID_HEIGHT`; centro de los píxeles que cambiaron, espejado si `CAM_MIRROR`. `src/powerband/instrument/HandTracker.java`
+- `HandTracker(int pGridWidth, int pGridHeight)`
+- `track(BufferedImage pFrame)` — `HandReading` con x, y y fracción que cambió; ausente en el primer cuadro o si el cambio sale de `CAM_MIN_MOTION`..`CAM_MAX_MOTION`
+- `reset()` — olvida el cuadro anterior
+
+### HandReading
+Inmutable: dónde se movió la mano en un cuadro. `src/powerband/model/HandReading.java`
+- `HandReading(boolean pPresent, float pX, float pY, float pMotion)`; `absent()` — fábrica estática
+- getters: `isPresent`, `getX`, `getY`, `getMotion`
 
 ### IGamepadReader
 Lectura del control. `src/powerband/instrument/IGamepadReader.java`
@@ -114,6 +145,25 @@ Abstracta; listeners en `CopyOnWriteArrayList` y template method. `src/powerband
 - `onSynthEvent(SynthEvent pEvent)` — si está grabando, escribe el evento con tiempo relativo (mínimo 0)
 - `isRecording()`, `isPendingName()`, `getStartTimeMs()`
 
+### RecordingLibrary
+Lista cronológica (desde `recordings.list`, un registro a la vez) y carga por nombre con la búsqueda binaria de `RecordingIndex`. `src/powerband/editor/RecordingLibrary.java`
+- `RecordingLibrary(RecordingStorage pStorage, RecordingIndex pIndex)` — null → `IllegalArgumentException`
+- `listCount()` — cantidad de grabaciones (`throws StorageException`)
+- `listEntry(long pIndex)` — grabación número `pIndex` en orden cronológico (`throws StorageException`)
+- `load(String pName)` — `RecordingHeader` de esa grabación (`throws StorageException, RecordingNotFoundException`)
+
+### Player
+Reproduce con los mismos `ISynthCommand` de los instrumentos (Bridge): lee un comando a la vez de `recordings.music`, espera hasta `inicio + timeMs` y lo envía al comando de su synth (`switch` sobre `SynthType`). Lleva las notas del órgano encendidas y las apaga al terminar o detenerse. `src/powerband/editor/Player.java`
+- `Player(RecordingStorage pStorage, ISynthCommand pPiano, ISynthCommand pBass, ISynthCommand pOrgan)`
+- `play(RecordingHeader pHeader)` — reproduce en el hilo que llama (`throws StorageException, InterruptedException`)
+- `start(RecordingHeader pHeader)` — reproduce en un hilo daemon `PLAYER_THREAD_NAME`; con otra en curso → `IllegalStateException`
+- `stop()` — interrumpe y espera el hilo; idempotente
+- `isPlaying()`, `setListener(IPlaybackListener pListener)`
+
+### IPlaybackListener
+Aviso de fin de reproducción (para la ventana de ft-8). `src/powerband/editor/IPlaybackListener.java`
+- `onPlaybackFinished(String pName)`
+
 ### IRecordingIndexer
 Interfaz del índice por nombre. `src/powerband/storage/IRecordingIndexer.java`
 - `add(String pName, long pHeaderPosition)` — (`throws StorageException`)
@@ -121,6 +171,10 @@ Interfaz del índice por nombre. `src/powerband/storage/IRecordingIndexer.java`
 ### RecordingHeader
 Inmutable. `src/powerband/model/RecordingHeader.java`
 - `RecordingHeader(String pName, long pStartPosition, long pEndPosition)`; `getName()`, `getStartPosition()`, `getEndPosition()`
+
+### IndexEntry
+Inmutable: registro de `recordings.index`. `src/powerband/model/IndexEntry.java`
+- `IndexEntry(String pName, long pHeaderPosition)`; `getName()`, `getHeaderPosition()`
 
 ### ListEntry
 Inmutable. `src/powerband/model/ListEntry.java`
@@ -153,8 +207,8 @@ Checked; base y error de conexión local (UDP no detecta scsynth apagado). `src/
 ### DeviceException
 Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicializa. `src/powerband/exception/DeviceException.java`
 
-### StorageException / DuplicateRecordingNameException
-Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, y nombre ya existente (`DuplicateRecordingNameException(String pName)`). `src/powerband/exception/`
+### StorageException / DuplicateRecordingNameException / RecordingNotFoundException
+Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, nombre ya existente (`DuplicateRecordingNameException(String pName)`) y nombre que no está en el índice (`RecordingNotFoundException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones, escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, y mensajes de consola y de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), reproductor, y mensajes de consola y de error. `src/powerband/util/IConstants.java`

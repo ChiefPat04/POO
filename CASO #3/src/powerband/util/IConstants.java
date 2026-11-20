@@ -76,6 +76,10 @@ public interface IConstants {
     public static final String DATA_DIR = "data";
     public static final String MUSIC_FILE = DATA_DIR + "/recordings.music";
     public static final String LIST_FILE = DATA_DIR + "/recordings.list";
+    public static final String INDEX_FILE = DATA_DIR + "/recordings.index";
+    /** Los 4 archivos temporales del Balanced Merge Sort de 2 vías. */
+    public static final List<String> MERGE_TEMP_FILES =
+            List.of("merge1.tmp", "merge2.tmp", "merge3.tmp", "merge4.tmp");
     public static final String FILE_MODE_READ = "r";
     public static final String FILE_MODE_READ_WRITE = "rw";
 
@@ -85,6 +89,21 @@ public interface IConstants {
     public static final int NAME_LENGTH = 32;
     /** Nombre (32) + fecha en ms (8). */
     public static final int LIST_RECORD_SIZE = 40;
+    /** Registro de recordings.index: nombre (32) + posición del encabezado (8). */
+    public static final int INDEX_RECORD_SIZE = 40;
+    /** Balanced Merge Sort: tramos iniciales de 1 registro que se duplican en cada pasada. */
+    public static final long MERGE_INITIAL_RUN = 1L;
+    public static final long MERGE_RUN_GROWTH = 2L;
+    /** Mezcla de 2 vías: 2 archivos de entrada y 2 de salida por pasada. */
+    public static final int MERGE_WAYS = 2;
+    /** Desplazamiento del segundo archivo dentro de un par (entradas o salidas). */
+    public static final int MERGE_SECOND_OFFSET = 1;
+    public static final long EMPTY_COUNT = 0L;
+    /** Divisor para tomar el punto medio en la búsqueda binaria. */
+    public static final long SEARCH_HALF = 2L;
+    public static final long SEARCH_STEP = 1L;
+    /** Resultado de compareTo cuando los dos nombres son iguales. */
+    public static final int SAME_NAME = 0;
     public static final int HEADER_PADDING = 15;
     public static final int COMMAND_PADDING = 13;
     public static final long FILE_START = 0L;
@@ -189,6 +208,54 @@ public interface IConstants {
     public static final long MIC_STOP_TIMEOUT_MS = 1000L;
     public static final String MIC_THREAD_NAME = "powerband-microphone";
 
+    // ------------------------------------------------------------ webcam -> piano
+    public static final int PIANO_MIN_NOTE = 48;
+    public static final int PIANO_MAX_NOTE = 72;
+    /** Do3: nota del paso 0 (abajo de la imagen). */
+    public static final int PIANO_ROOT_NOTE = 48;
+    /** Dos octavas de Do mayor: pasos 0..14 (Do3..Do5). */
+    public static final int CAM_MAX_STEP = 14;
+    /** Franjas de igual alto en la imagen: una por nota. */
+    public static final int CAM_NOTE_BANDS = CAM_MAX_STEP + 1;
+    /** Cuadrícula a la que se reduce cada cuadro antes de compararlo. */
+    public static final int CAM_GRID_WIDTH = 64;
+    public static final int CAM_GRID_HEIGHT = 48;
+    /** Diferencia de gris (0..255) para contar un píxel como cambiado. Ajustar con la cámara real. */
+    public static final int CAM_PIXEL_THRESHOLD = 30;
+    /** Banda del raster gris. */
+    public static final int CAM_GRAY_BAND = 0;
+    /** Espejar la imagen para que la izquierda sea la del usuario frente a la cámara. */
+    public static final boolean CAM_MIRROR = true;
+    /** Desplazamiento al centro de una celda de la cuadrícula. */
+    public static final float CAM_PIXEL_CENTER = 0.5f;
+    /** Límites de una coordenada normalizada. */
+    public static final float CAM_NORMALIZED_MIN = 0f;
+    public static final float CAM_NORMALIZED_MAX = 1f;
+    public static final float CAM_NO_MOTION = 0f;
+    /** Fracción de la cuadrícula que cambió. Ajustar con la cámara, la luz y la distancia reales. */
+    public static final float CAM_MIN_MOTION = 0.01f;
+    public static final float CAM_REARM_MOTION = 0.02f;
+    public static final float CAM_STRIKE_MOTION = 0.06f;
+    /** Más que esto es un cambio de luz o de la cámara, no la mano. */
+    public static final float CAM_MAX_MOTION = 0.5f;
+    /** A la izquierda de esta x el acorde es mayor; a la derecha, menor. */
+    public static final float CAM_SPLIT_X = 0.5f;
+    public static final int CAM_DUR_MS = 1000;
+    public static final float CAM_AMP_GAIN = 4f;
+    public static final float CAM_MIN_AMP = 0.15f;
+    public static final float CAM_MAX_AMP = 0.6f;
+    public static final long CAM_POLL_INTERVAL_MS = 33L;
+    public static final long CAM_RETRY_WAIT_MS = 500L;
+    public static final long CAM_STOP_TIMEOUT_MS = 1000L;
+    public static final String CAM_THREAD_NAME = "powerband-webcam";
+
+    // ------------------------------------------------------------ reproductor
+    public static final String PLAYER_THREAD_NAME = "powerband-player";
+    public static final long PLAYER_STOP_TIMEOUT_MS = 1000L;
+    public static final long PLAYER_NO_WAIT_MS = 0L;
+    /** Margen aceptado entre el intervalo grabado y el reproducido (lo usan las pruebas). */
+    public static final long PLAYER_TIMING_TOLERANCE_MS = 30L;
+
     // ------------------------------------------------------------ mensajes de consola
     public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque los instrumentos. Enter para salir.";
     public static final String MSG_NO_INSTRUMENTS = "No se pudo iniciar ningún instrumento.";
@@ -199,6 +266,11 @@ public interface IConstants {
     public static final String ERR_NULL_AUDIO_SOURCE = "La fuente de audio no puede ser null";
     public static final String ERR_MIC_PLAY = "No se pudo tocar la nota del micrófono: ";
     public static final String ERR_INSTRUMENT_START = "No se pudo iniciar un instrumento: ";
+    public static final String ERR_NO_WEBCAM = "No hay ninguna webcam disponible";
+    public static final String ERR_WEBCAM_OPEN = "No se pudo abrir la webcam";
+    public static final String ERR_WEBCAM_ALREADY_STARTED = "La webcam ya está iniciada";
+    public static final String ERR_NULL_FRAME_SOURCE = "La fuente de cuadros no puede ser null";
+    public static final String ERR_WEBCAM_PLAY = "No se pudo tocar el acorde de la webcam: ";
     public static final String ERR_NO_GAMEPAD = "No hay ningún control conectado";
     public static final String ERR_GAMEPAD_INIT = "No se pudo inicializar la lectura del control";
     public static final String ERR_GAMEPAD_ALREADY_STARTED = "El control ya está iniciado";
@@ -207,12 +279,24 @@ public interface IConstants {
     public static final String ERR_CONSOLE_READ = "No se pudo leer la consola: ";
     public static final String ERR_STORAGE_READ = "No se pudo leer el archivo: ";
     public static final String ERR_STORAGE_WRITE = "No se pudo escribir el archivo: ";
+    public static final String ERR_INDEX_SORT = "No se pudo ordenar el índice: ";
+    public static final String ERR_INDEX_READ = "No se pudo leer el índice: ";
+    public static final String ERR_INDEX_WRITE = "No se pudo escribir el índice: ";
+    public static final String ERR_NULL_INDEX_FILE = "El archivo del índice y la carpeta de temporales no pueden ser null";
+    public static final String ERR_TEMP_DELETE = "No se pudo borrar el archivo temporal: ";
+    public static final String ERR_INDEX_OUT_OF_RANGE = "Posición fuera del índice: ";
     public static final String ERR_UNEXPECTED_RECORD_TYPE = "Tipo de registro inesperado: ";
     public static final String ERR_UNKNOWN_SYNTH_CODE = "Código de synth desconocido: ";
     public static final String ERR_UNKNOWN_ACTION_CODE = "Código de acción desconocido: ";
     public static final String ERR_ALREADY_RECORDING = "Ya hay una grabación en curso o pendiente de nombre";
     public static final String ERR_NOT_RECORDING = "No hay una grabación en curso";
     public static final String ERR_NO_PENDING_RECORDING = "No hay una grabación pendiente de nombre";
+    public static final String ERR_RECORDING_NOT_FOUND = "No existe una grabación con el nombre: ";
+    public static final String ERR_ALREADY_PLAYING = "Ya hay una reproducción en curso";
+    public static final String ERR_PLAYER_SEND = "No se pudo enviar un comando de la grabación: ";
+    public static final String ERR_PLAYER_READ = "No se pudo leer la grabación: ";
+    public static final String ERR_NULL_HEADER = "El encabezado no puede ser null";
+    public static final String ERR_NULL_LIBRARY_DEPENDENCY = "El almacenamiento y el índice no pueden ser null";
     public static final String ERR_DUPLICATE_NAME = "Ya existe una grabación con el nombre: ";
     public static final String ERR_INVALID_NAME = "Nombre de grabación inválido (1 a 32 caracteres ASCII, sin espacios en los extremos): ";
     public static final String ERR_NULL_STORAGE = "El almacenamiento no puede ser null";
