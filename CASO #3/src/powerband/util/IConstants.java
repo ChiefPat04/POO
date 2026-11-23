@@ -256,16 +256,66 @@ public interface IConstants {
     /** Margen aceptado entre el intervalo grabado y el reproducido (lo usan las pruebas). */
     public static final long PLAYER_TIMING_TOLERANCE_MS = 30L;
 
-    // ------------------------------------------------------------ mensajes de consola
-    public static final String MSG_PRESS_ENTER_TO_EXIT = "Toque los instrumentos. Enter para salir.";
-    public static final String MSG_NO_INSTRUMENTS = "No se pudo iniciar ningún instrumento.";
+    // ------------------------------------------------------------ editor: instrumentos y estado
+    public static final String LABEL_GAMEPAD = "Control PS5 → bajo";
+    public static final String LABEL_MICROPHONE = "Micrófono → órgano";
+    public static final String LABEL_WEBCAM = "Webcam → piano";
+    public static final String STATUS_STARTED = "Iniciados: ";
+    public static final String STATUS_FAILED = "Fallaron: ";
+    public static final String STATUS_NONE = "ninguno";
+    public static final String STATUS_SEPARATOR = ", ";
+    public static final String STATUS_REASON_OPEN = " (";
+    public static final String STATUS_REASON_CLOSE = ")";
+    public static final String STATUS_PART_SEPARATOR = "  |  ";
+    public static final String STATUS_LOADED = "Cargada: ";
+
+    // ------------------------------------------------------------ editor: monitor y lista
+    public static final String MONITOR_TIME_PATTERN = "HH:mm:ss.SSS";
+    public static final String MONITOR_LINE_FORMAT = "%s  %-5s  %-8s  nota %3d  dur %s";
+    public static final String MONITOR_NO_VALUE = "-";
+    public static final String MONITOR_DUR_SUFFIX = " ms";
+    public static final int MONITOR_MAX_LINES = 500;
+    public static final int MONITOR_FONT_SIZE = 12;
+    public static final String LIST_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    public static final String LIST_LINE_FORMAT = "%-32s  %s";
+    public static final int NO_SELECTION = -1;
+
+    // ------------------------------------------------------------ editor: ventana
+    public static final String WINDOW_TITLE = APP_NAME;
+    public static final String BTN_RECORD = "Grabar";
+    public static final String BTN_STOP_RECORDING = "Detener grabación";
+    public static final String BTN_LOAD = "Cargar";
+    public static final String BTN_PLAY = "Reproducir";
+    public static final String BTN_STOP_PLAYBACK = "Detener reproducción";
+    public static final String TITLE_RECORDINGS = "Grabaciones";
+    public static final String TITLE_MONITOR = "Monitor";
+    public static final String DIALOG_NAME_TITLE = "Guardar grabación";
+    public static final String DIALOG_NAME_PROMPT = "Nombre (máximo 32 caracteres, sin tildes ni ñ):";
+    public static final String DIALOG_ERROR_TITLE = "Error";
+    public static final String STATE_IDLE = "Listo";
+    public static final String STATE_RECORDING = "Grabando…";
+    public static final String STATE_NAMING = "Esperando nombre";
+    public static final String STATE_PLAYING = "Reproduciendo…";
+    public static final String LIST_READ_ERROR = "(no se pudo leer)";
+    public static final String NEWLINE = "\n";
+    public static final int WINDOW_WIDTH = 1000;
+    public static final int WINDOW_HEIGHT = 600;
+    public static final int LIST_PANEL_WIDTH = 360;
+    public static final int UI_GAP = 8;
+    public static final String MONO_FONT = java.awt.Font.MONOSPACED;
+    public static final int EXIT_OK = 0;
+    public static final int WINDOW_CLOSE_SIGNALS = 1;
 
     // ------------------------------------------------------------ mensajes de error
+    public static final String ERR_INVALID_STATE = "Acción no permitida en el estado: ";
+    public static final String ERR_NOTHING_LOADED = "No hay ninguna grabación cargada";
+    public static final String ERR_NULL_EDITOR_DEPENDENCY = "El grabador, el reproductor, la biblioteca y el órgano no pueden ser null";
+    public static final String ERR_SHUTDOWN_STEP = "Error al cerrar: ";
+    public static final String ERR_SC_CONNECT = "No se pudo conectar con SuperCollider: ";
     public static final String ERR_NO_MICROPHONE = "No se pudo abrir el micrófono";
     public static final String ERR_MIC_ALREADY_STARTED = "El micrófono ya está iniciado";
     public static final String ERR_NULL_AUDIO_SOURCE = "La fuente de audio no puede ser null";
     public static final String ERR_MIC_PLAY = "No se pudo tocar la nota del micrófono: ";
-    public static final String ERR_INSTRUMENT_START = "No se pudo iniciar un instrumento: ";
     public static final String ERR_NO_WEBCAM = "No hay ninguna webcam disponible";
     public static final String ERR_WEBCAM_OPEN = "No se pudo abrir la webcam";
     public static final String ERR_WEBCAM_ALREADY_STARTED = "La webcam ya está iniciada";
@@ -276,7 +326,6 @@ public interface IConstants {
     public static final String ERR_GAMEPAD_ALREADY_STARTED = "El control ya está iniciado";
     public static final String ERR_NULL_READER = "El lector del control no puede ser null";
     public static final String ERR_GAMEPAD_PLAY = "No se pudo tocar la nota del control: ";
-    public static final String ERR_CONSOLE_READ = "No se pudo leer la consola: ";
     public static final String ERR_STORAGE_READ = "No se pudo leer el archivo: ";
     public static final String ERR_STORAGE_WRITE = "No se pudo escribir el archivo: ";
     public static final String ERR_INDEX_SORT = "No se pudo ordenar el índice: ";
