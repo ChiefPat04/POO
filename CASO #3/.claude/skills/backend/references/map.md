@@ -12,6 +12,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Patrón Bridge, implementación (comandos de synth + observador): `src/powerband/command/`
 - Cliente OSC por UDP hacia scsynth: `src/powerband/sc/OscClient.java`
 - Grabador del editor (ft-5): `src/powerband/editor/Recorder.java`
+- Controlador del editor sin Swing (ft-8): reglas de estado, grabar/nombrar/descartar, cargar/reproducir, instrumentos y cierre ordenado: `src/powerband/editor/EditorController.java`, con `EditorState.java` e `IEditorView.java`
 - Cargar y reproducir (ft-7): lista cronológica y carga por nombre en `src/powerband/editor/RecordingLibrary.java`; reproductor con hilo propio en `src/powerband/editor/Player.java`
 - Contrato del índice (lo implementa `RecordingIndex`, ft-6; ver mapa de database): `src/powerband/storage/IRecordingIndexer.java`
 - Evento musical inmutable, enums, encabezado de grabación y entrada de lista: `src/powerband/model/`
@@ -19,7 +20,7 @@ Source: `src/powerband/` (paquetes `instrument`, `command`, `sc`, `editor`, `mod
 - Constantes: `src/powerband/util/IConstants.java`
 
 ## Entrypoints
-- `src/powerband/PowerBandMain.java` (provisional hasta ft-8: `OscClient`, los 3 comandos, `GamepadInstrument`, `MicrophoneInstrument` y `WebcamInstrument`; si uno no inicia se informa y los demás siguen; termina con Enter, luego `stop()` de los iniciados y `allNotesOff()`)
+- `src/powerband/PowerBandMain.java` — `OscClient` en try-with-resources, los 3 comandos, `RecordingStorage`, `RecordingIndex`, `Recorder`, `Player`, `RecordingLibrary`, `EditorController` y los 3 instrumentos; `startInstruments()`, abre `EditorWindow` en el hilo de Swing y espera un `CountDownLatch` que la ventana baja al cerrarse; luego `System.exit(EXIT_OK)`. Si `OscClient` falla, diálogo `ERR_SC_CONNECT`.
 
 ## Classes
 ### Instrument
@@ -145,6 +146,27 @@ Abstracta; listeners en `CopyOnWriteArrayList` y template method. `src/powerband
 - `onSynthEvent(SynthEvent pEvent)` — si está grabando, escribe el evento con tiempo relativo (mínimo 0)
 - `isRecording()`, `isPendingName()`, `getStartTimeMs()`
 
+### EditorController
+Lógica del editor sin Swing; `IPlaybackListener` del `Player`. Estado `synchronized`; avisa a la vista dentro del lock para que el orden sea el de los cambios (la vista no debe bloquear). `stopPlayback` y `shutdown` llaman `player.stop()` sin el lock, porque el hilo del reproductor llama `onPlaybackFinished`. `src/powerband/editor/EditorController.java`
+- `EditorController(Recorder pRecorder, Player pPlayer, RecordingLibrary pLibrary, OrganCommand pOrgan)` — null → `IllegalArgumentException`
+- `setView(IEditorView pView)`
+- `addInstrument(String pLabel, Instrument pInstrument)`, `startInstruments()` (no lanza), `getInstrumentStatus()`
+- `getState()`
+- `startRecording()` — `IDLE` → `RECORDING` (`throws StorageException`)
+- `stopRecording()` — → `NAMING`, también si `Recorder.stop` lanza (`throws StorageException, SynthConnectionException`)
+- `saveRecording(String pName)` — → `IDLE` + `recordingsChanged()`; repetido o inválido sigue `NAMING` (`throws StorageException, DuplicateRecordingNameException`)
+- `discardRecording()` — `NAMING` → `IDLE` (`throws StorageException`)
+- `load(String pName)` — en `IDLE`, búsqueda binaria vía `RecordingLibrary.load` (`throws StorageException, RecordingNotFoundException`)
+- `getLoadedName()` — `null` si no hay cargada
+- `play()` — grabación cargada en `IDLE` → `PLAYING`; vuelve a `IDLE` en `onPlaybackFinished`
+- `stopPlayback()`
+- `shutdown()` — descarta grabación sin terminar, detiene `Player`, instrumentos iniciados y `allNotesOff`; errores a `showError`; idempotente
+- `recordingCount()`, `recordingAt(long pIndex)` — delegan en `RecordingLibrary`
+- `isValidName(String pName)`, `formatEvent(SynthEvent pEvent)`, `formatListEntry(ListEntry pEntry)` — estáticos
+
+### EditorState / IEditorView
+Enum `IDLE, RECORDING, NAMING, PLAYING`; interfaz de avisos a la vista: `stateChanged(EditorState pState)`, `recordingsChanged()`, `showError(String pMessage)`. `src/powerband/editor/`
+
 ### RecordingLibrary
 Lista cronológica (desde `recordings.list`, un registro a la vez) y carga por nombre con la búsqueda binaria de `RecordingIndex`. `src/powerband/editor/RecordingLibrary.java`
 - `RecordingLibrary(RecordingStorage pStorage, RecordingIndex pIndex)` — null → `IllegalArgumentException`
@@ -211,4 +233,4 @@ Checked, extiende `PowerBandException`: dispositivo sin conectar o que no inicia
 Checked, extienden `PowerBandException`: falla de E/S en los archivos de grabaciones, nombre ya existente (`DuplicateRecordingNameException(String pName)`) y nombre que no está en el índice (`RecordingNotFoundException(String pName)`). `src/powerband/exception/`
 
 ### IConstants
-Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), reproductor, y mensajes de consola y de error. `src/powerband/util/IConstants.java`
+Conexión, OSC, synths, parámetros, valores por defecto (`List.of` inmutables para el órgano), archivos y formato binario de las grabaciones (incluido el índice y el Balanced Merge Sort), escala y rango del bajo, control PS5, captura de audio, detección de tono, reglas del micrófono, webcam → piano (rango, cuadrícula, umbrales de movimiento, hilo), reproductor, editor (etiquetas, estado, monitor, lista, textos y tamaños de la ventana) y mensajes de error. `src/powerband/util/IConstants.java`
