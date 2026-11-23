@@ -33,9 +33,10 @@ status: draft
   - `recordDuplicateNameThenOtherNameSaves`: con `"Cancion1"` ya guardada: grabar, tocar un evento, detener → `NAMING`; `saveRecording("Cancion1")` → `DuplicateRecordingNameException` y sigue `NAMING`; `saveRecording("Cancion2")` → `IDLE`, `recordingCount()` = 2, `recordingAt(1)` es `"Cancion2"` y la vista recibió `recordingsChanged()`.
   - `invalidNameKeepsNaming`: `"canción"` → `IllegalArgumentException`, sigue `NAMING`.
   - `cancelDiscardsRecording`: grabar, detener, `discardRecording` → `IDLE`; el largo de `recordings.music` es el de antes y `recordingCount()` no cambió.
-  - `playsSavedRecordingAndReturnsToIdle`: grabación guardada con 2 comandos cortos; `play` → `PLAYING`; el receptor recibe los 2 mensajes; antes de un timeout el estado vuelve a `IDLE` y la vista recibió `stateChanged(IDLE)`.
+  - `loadThenPlaySavedRecordingReturnsToIdle`: grabación guardada con 2 comandos cortos; `load` y `play` → `PLAYING`; el receptor recibe los 2 mensajes; antes de un timeout el estado vuelve a `IDLE`, la vista recibió `stateChanged(IDLE)` y `getLoadedName()` sigue siendo ese nombre.
+  - `playWithoutLoadThrowsIllegalStateException`.
   - `stopPlaybackReturnsToIdleQuickly`: grabación larga; `stopPlayback` deja `IDLE` en menos de `PLAYER_STOP_TIMEOUT_MS`.
-  - `playUnknownNameThrowsAndStaysIdle` → `RecordingNotFoundException`.
+  - `loadUnknownNameThrowsAndKeepsPreviousLoad` → `RecordingNotFoundException`; `getLoadedName()` no cambia.
   - `stateChangesAreReportedToView`: la secuencia grabar → detener → guardar produce `RECORDING`, `NAMING`, `IDLE` en la vista, en ese orden.
   - `failingInstrumentDoesNotStopOthers`: 3 instrumentos, el segundo falla al iniciar; los otros dos iniciaron y `getInstrumentStatus()` contiene las 3 etiquetas y el motivo del fallo.
   - `shutdownWhileRecordingIsOrdered`: grabando con un `noteOn` del órgano encendido; `shutdown` → la grabación se descartó (largo de antes), el `Player` no está sonando, los instrumentos iniciados recibieron `stop()` y el que falló no, y el receptor recibió `/n_set gate 0` para el nodo del órgano.

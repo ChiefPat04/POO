@@ -8,7 +8,7 @@ status: draft
 
 ## General description
 
-- Ventana Swing del editor: 4 botones, la lista de grabaciones, el monitor en vivo de comandos y una barra de estado.
+- Ventana Swing del editor: 5 botones, la lista de grabaciones, el monitor en vivo de comandos y una barra de estado.
 - Solo muestra y llama a `EditorController`; no tiene reglas propias.
 - Implementa `IEditorView` y pasa cada aviso al hilo de Swing.
 
@@ -28,12 +28,12 @@ status: draft
 
 - Botones según el estado:
 
-  | Estado | Grabar | Detener grabación | Reproducir | Detener reproducción |
-  |---|---|---|---|---|
-  | `IDLE` | sí | no | sí, si hay una grabación seleccionada | no |
-  | `RECORDING` | no | sí | no | no |
-  | `NAMING` | no | no | no | no |
-  | `PLAYING` | no | no | no | sí |
+  | Estado | Grabar | Detener grabación | Cargar | Reproducir | Detener reproducción |
+  |---|---|---|---|---|---|
+  | `IDLE` | sí | no | sí, si hay una grabación seleccionada | sí, si hay una grabación cargada | no |
+  | `RECORDING` | no | sí | no | no | no |
+  | `NAMING` | no | no | no | no | no |
+  | `PLAYING` | no | no | no | no | sí |
 
 - La lista muestra las grabaciones en orden cronológico (la más vieja arriba), con nombre y fecha/hora; se refresca al guardar.
 - El monitor agrega una línea por comando enviado, incluidos los de una reproducción, y nunca pasa de `MONITOR_MAX_LINES`: se borran las más viejas.
@@ -56,7 +56,7 @@ status: draft
 
   ```
   +--------------------------------------------------------------+
-  | [Grabar] [Detener grabación] [Reproducir] [Detener reprod.]  |  NORTH
+  | [Grabar] [Detener grab.] [Cargar] [Reproducir] [Detener rep.] |  NORTH
   +----------------------+---------------------------------------+
   | Grabaciones          | Monitor                               |
   | Cancion1  2026-11-.. | 14:02:11.512  PIANO  TRIGGER  nota 60 |  CENTER (JSplitPane)
@@ -67,7 +67,7 @@ status: draft
   ```
 
 - Claves nuevas en `IConstants`:
-  - Textos: `WINDOW_TITLE` (= `APP_NAME`), `BTN_RECORD` (`Grabar`), `BTN_STOP_RECORDING` (`Detener grabación`), `BTN_PLAY` (`Reproducir`), `BTN_STOP_PLAYBACK` (`Detener reproducción`), `TITLE_RECORDINGS` (`Grabaciones`), `TITLE_MONITOR` (`Monitor`), `DIALOG_NAME_TITLE` (`Guardar grabación`), `DIALOG_NAME_PROMPT` (`Nombre (máximo 32 caracteres, sin tildes ni ñ):`), `DIALOG_ERROR_TITLE` (`Error`), `STATE_IDLE` (`Listo`), `STATE_RECORDING` (`Grabando…`), `STATE_NAMING` (`Esperando nombre`), `STATE_PLAYING` (`Reproduciendo…`), `LIST_READ_ERROR` (`(no se pudo leer)`), `NEWLINE` (`\n`).
+  - Textos: `WINDOW_TITLE` (= `APP_NAME`), `BTN_RECORD` (`Grabar`), `BTN_LOAD` (`Cargar`), `STATUS_LOADED` (`Cargada: `), `BTN_STOP_RECORDING` (`Detener grabación`), `BTN_PLAY` (`Reproducir`), `BTN_STOP_PLAYBACK` (`Detener reproducción`), `TITLE_RECORDINGS` (`Grabaciones`), `TITLE_MONITOR` (`Monitor`), `DIALOG_NAME_TITLE` (`Guardar grabación`), `DIALOG_NAME_PROMPT` (`Nombre (máximo 32 caracteres, sin tildes ni ñ):`), `DIALOG_ERROR_TITLE` (`Error`), `STATE_IDLE` (`Listo`), `STATE_RECORDING` (`Grabando…`), `STATE_NAMING` (`Esperando nombre`), `STATE_PLAYING` (`Reproduciendo…`), `LIST_READ_ERROR` (`(no se pudo leer)`), `NEWLINE` (`\n`).
   - Tamaños y límites: `WINDOW_WIDTH` (1000), `WINDOW_HEIGHT` (600), `LIST_PANEL_WIDTH` (360), `MONITOR_MAX_LINES` (500), `MONITOR_FONT_SIZE` (12), `UI_GAP` (8), `MONO_FONT` (`Font.MONOSPACED`).
 
 ## Implementation guidelines
@@ -81,7 +81,7 @@ status: draft
   2. Ciclo con `JOptionPane.showInputDialog`: `null` (cancelar o cerrar) → `controller.discardRecording()` y sale.
   3. Si `!EditorController.isValidName(nombre)` → `ERR_INVALID_NAME` y repite.
   4. `controller.saveRecording(nombre)`; `DuplicateRecordingNameException` → su mensaje y repite; `StorageException` → su mensaje y repite solo si el estado sigue en `NAMING`.
-- Reproducir: toma `listModel.nameAt(listaSeleccionada)` y llama `controller.play(nombre)`.
+- Cargar: toma `listModel.nameAt(listaSeleccionada)` y llama `controller.load(nombre)`; la barra de estado muestra `STATUS_LOADED` + el nombre. Reproducir llama `controller.play()`.
 - `RecordingListModel` no copia la lista: `getSize` devuelve el conteo leído en el último `refresh()`, y `getElementAt` llama `controller.recordingAt(i)` y `formatListEntry`. Si lee mal, devuelve `LIST_READ_ERROR`. `refresh()` relee el conteo y llama `fireContentsChanged`. Así se respeta la regla de no cargar las grabaciones a una colección.
 - `nameAt` lee el nombre de la entrada (`ListEntry.getName()`), no el texto formateado.
 - `MonitorPanel`: `JTextArea` no editable con fuente monoespaciada. `onSynthEvent` formatea con `EditorController.formatEvent` en el hilo que llama y agrega la línea con `invokeLater`; si pasa de `MONITOR_MAX_LINES`, borra desde el inicio hasta `getLineEndOffset` de la línea sobrante. Baja el scroll al final.

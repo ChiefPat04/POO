@@ -14,7 +14,7 @@ status: draft
 
 ## Inputs
 
-- Acciones de la ventana: grabar, detener grabación, guardar con un nombre, descartar, reproducir un nombre, detener reproducción, cerrar.
+- Acciones de la ventana: grabar, detener grabación, guardar con un nombre, descartar, cargar un nombre, reproducir lo cargado, detener reproducción, cerrar.
 - Aviso de `Player` por `IPlaybackListener.onPlaybackFinished`, desde el hilo del reproductor.
 - Instrumentos con su etiqueta, por `addInstrument`.
 
@@ -29,13 +29,14 @@ status: draft
 
 - Estado inicial `IDLE`.
 - `startRecording` en `IDLE` → `RECORDING`. En `PLAYING`, `RECORDING` o `NAMING` → `IllegalStateException` y no se escribe nada.
-- `play` en `IDLE` → `PLAYING`. En `RECORDING` o `NAMING` → `IllegalStateException` y no suena nada.
+- `load` en `IDLE` busca el nombre con `RecordingLibrary.load` (búsqueda binaria en el índice) y guarda su encabezado como grabación cargada; `getLoadedName()` devuelve ese nombre. En `RECORDING` o `NAMING` → `IllegalStateException`.
+- `play` en `IDLE` con una grabación cargada → `PLAYING`. Sin grabación cargada, o en `RECORDING` o `NAMING` → `IllegalStateException` y no suena nada.
 - `stopRecording` → `NAMING`, también cuando `Recorder.stop` lanza (el grabador quedó pendiente de nombre).
 - `saveRecording` con nombre repetido → `DuplicateRecordingNameException`, sigue en `NAMING`; con otro nombre → `IDLE` y `recordingsChanged()` a la vista.
 - `saveRecording` con nombre inválido → `IllegalArgumentException`, sigue en `NAMING`.
 - `discardRecording` → `IDLE`; `recordings.music` vuelve al largo de antes de grabar y la lista no cambia.
-- `play` de un nombre guardado → `PLAYING`; sus comandos llegan a los comandos de synth; al terminar sola, `onPlaybackFinished` deja `IDLE` y avisa a la vista.
-- `play` de un nombre que no existe → `RecordingNotFoundException`, sigue en `IDLE`.
+- `load` y luego `play` de un nombre guardado → `PLAYING`; sus comandos llegan a los comandos de synth; al terminar sola, `onPlaybackFinished` deja `IDLE` y avisa a la vista. La grabación sigue cargada para volver a tocarla.
+- `load` de un nombre que no existe → `RecordingNotFoundException`, sigue en `IDLE`; la grabación cargada antes no cambia.
 - `stopPlayback` → `IDLE` en menos de `PLAYER_STOP_TIMEOUT_MS`.
 - Cada cambio de estado llama `stateChanged` una vez, con el estado nuevo.
 - `startInstruments` inicia todos; si uno lanza `PowerBandException`, sigue con los demás; `getInstrumentStatus()` nombra los que iniciaron y los que fallaron con su motivo.
@@ -61,7 +62,9 @@ status: draft
   - `void stopRecording() throws StorageException, SynthConnectionException`
   - `void saveRecording(String pName) throws StorageException, DuplicateRecordingNameException`
   - `void discardRecording() throws StorageException`
-  - `void play(String pName) throws StorageException, RecordingNotFoundException`
+  - `void load(String pName) throws StorageException, RecordingNotFoundException`
+  - `String getLoadedName()` — `null` si no hay ninguna cargada.
+  - `void play() throws StorageException`
   - `void stopPlayback()`
   - `void shutdown()` — no lanza.
   - `long recordingCount() throws StorageException`, `ListEntry recordingAt(long pIndex) throws StorageException` — delegan en `RecordingLibrary`, una entrada a la vez.
@@ -88,7 +91,7 @@ status: draft
 - Las llamadas a la vista se hacen después de cambiar el estado y fuera de la sección crítica cuando se pueda. Si la vista es `null`, se omiten.
 - `stopRecording`: llama `recorder.stop()` dentro de `try/finally`; en el `finally` pasa a `NAMING` si `recorder.isPendingName()`. Así la grabación se puede guardar o descartar aunque una escritura haya fallado.
 - `saveRecording`: después de `recorder.save`, si `recorder.isPendingName()` sigue en `NAMING`; si no, pasa a `IDLE` y llama `recordingsChanged()` (también si el indexador falló después de guardar en la lista, porque ya aparece).
-- `play`: `library.load(nombre)` y luego `player.start(header)`. Pasa a `PLAYING` antes de `start` y vuelve a `IDLE` si `start` lanza.
+- `load`: `library.load(nombre)` y guarda el `RecordingHeader`. `play`: `player.start(headerCargado)`; pasa a `PLAYING` antes de `start` y vuelve a `IDLE` si `start` lanza.
 - `startInstruments` guarda, por etiqueta, los que iniciaron (para detenerlos) y los que fallaron con su mensaje (para el estado). No usa `System.err`.
 - `shutdown`, en este orden, cada paso en su propio `try` y con un `catch` que llama `showError(ERR_SHUTDOWN_STEP + mensaje)`:
   1. `RECORDING` → `recorder.stop()`; `RECORDING` o `NAMING` → `recorder.discard()`.
@@ -117,5 +120,5 @@ status: draft
 2. Grabar: `IDLE` → `startRecording` → `RECORDING`.
 3. Detener: `stopRecording` → `NAMING`.
 4. Nombre: `saveRecording` → `IDLE` y lista actualizada; si el nombre falla, la ventana pide otro; si cancela, `discardRecording` → `IDLE`.
-5. Reproducir: `IDLE` → `play(nombre)` → `PLAYING` → al terminar o con `stopPlayback`, `IDLE`.
+5. Cargar y reproducir: `IDLE` → `load(nombre)` (búsqueda binaria) → `play()` → `PLAYING` → al terminar o con `stopPlayback`, `IDLE`.
 6. Cerrar: `shutdown`, la ventana baja el latch y `PowerBandMain` cierra `OscClient`.
