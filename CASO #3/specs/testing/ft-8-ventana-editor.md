@@ -1,7 +1,7 @@
 ---
 id: ft-8
 layer: testing
-status: draft
+status: approved
 ---
 
 # Ventana del editor e integración

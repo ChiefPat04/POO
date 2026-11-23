@@ -1,7 +1,7 @@
 ---
 id: ft-8
 layer: frontend
-status: draft
+status: approved
 ---
 
 # Ventana del editor e integración
