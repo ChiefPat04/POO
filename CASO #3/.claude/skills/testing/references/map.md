@@ -32,7 +32,7 @@ Source: `src/test/powerband/` (JUnit 5, `mvn test`)
 - `src/test/powerband/instrument/PitchDetectorTest.java` — 440 Hz, cada semitono de 40 a 100, armónicos, silencio, ruido, RMS, redondeo a MIDI
 - `src/test/powerband/instrument/MicrophoneInstrumentTest.java` — encendido tras ventanas estables, cambio de nota, apagado por silencio, histéresis, amp, fuera de rango, una sola nota, ciclo de vida del hilo
 - `src/test/powerband/instrument/HandTrackerTest.java` — primer cuadro, cuadros iguales, cambio mínimo, cambio de luz, centro del movimiento, altura, cantidad de movimiento, `reset`
-- `src/test/powerband/instrument/WebcamInstrumentTest.java` — disparo por golpe, histéresis y rearme, altura → nota 48–72 en Do mayor, lado → tercera, amp, duración, ciclo de vida del hilo y fuente sin cuadros
+- `src/test/powerband/instrument/WebcamInstrumentTest.java` — disparo por golpe, histéresis y rearme, altura → nota 48–72 en Do mayor, lado → tercera, amp, duración, ciclo de vida del hilo y fuente sin cuadros, tiempo mínimo entre golpes, borde en `CAM_SPLIT_X`
 - `src/test/powerband/instrument/GamepadInstrumentTest.java` — botones → notas, flanco, stick con histéresis, octavas, límites 28–55, duración por R2, ciclo de vida del hilo y reconexión
 
 ## Helpers

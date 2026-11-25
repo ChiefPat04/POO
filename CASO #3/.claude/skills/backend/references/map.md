@@ -65,6 +65,7 @@ Autocorrelación normalizada con interpolación parabólica. `src/powerband/inst
 
 ### WebcamInstrument
 `Instrument` de la webcam: hilo daemon que lee un cuadro cada `CAM_POLL_INTERVAL_MS`; un disparo por golpe, con histéresis de movimiento. `src/powerband/instrument/WebcamInstrument.java`
+- `WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource, LongSupplier pClock)` — reloj inyectable para las pruebas; entre disparos pasan al menos `CAM_MIN_STRIKE_INTERVAL_MS`
 - `WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource)`
 - `start()` — `source.open()` y arranca el hilo (`throws DeviceException`; ya iniciado → `IllegalStateException`)
 - `stop()` — detiene el hilo y cierra la fuente; idempotente
