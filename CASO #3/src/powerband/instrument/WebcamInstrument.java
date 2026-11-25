@@ -7,6 +7,7 @@ import static powerband.util.IConstants.CAM_GRID_WIDTH;
 import static powerband.util.IConstants.CAM_MAX_AMP;
 import static powerband.util.IConstants.CAM_MAX_STEP;
 import static powerband.util.IConstants.CAM_MIN_AMP;
+import static powerband.util.IConstants.CAM_MIN_STRIKE_INTERVAL_MS;
 import static powerband.util.IConstants.CAM_NORMALIZED_MAX;
 import static powerband.util.IConstants.CAM_NORMALIZED_MIN;
 import static powerband.util.IConstants.CAM_NOTE_BANDS;
@@ -18,6 +19,7 @@ import static powerband.util.IConstants.CAM_STOP_TIMEOUT_MS;
 import static powerband.util.IConstants.CAM_STRIKE_MOTION;
 import static powerband.util.IConstants.CAM_THREAD_NAME;
 import static powerband.util.IConstants.C_MAJOR_SCALE;
+import static powerband.util.IConstants.ERR_NULL_CLOCK;
 import static powerband.util.IConstants.ERR_NULL_FRAME_SOURCE;
 import static powerband.util.IConstants.ERR_WEBCAM_ALREADY_STARTED;
 import static powerband.util.IConstants.ERR_WEBCAM_PLAY;
@@ -29,6 +31,7 @@ import static powerband.util.IConstants.THIRD_MAJOR;
 import static powerband.util.IConstants.THIRD_MINOR;
 
 import java.awt.image.BufferedImage;
+import java.util.function.LongSupplier;
 
 import powerband.command.ISynthCommand;
 import powerband.exception.DeviceException;
@@ -44,25 +47,43 @@ import powerband.model.SynthEvent;
  *   <li>lado de la imagen = acorde mayor (izquierda) o menor (derecha);</li>
  *   <li>movimiento brusco = disparo. No vuelve a disparar hasta que el movimiento
  *       baja (histéresis con dos umbrales).</li>
+ *   <li>entre dos disparos pasan al menos {@code CAM_MIN_STRIKE_INTERVAL_MS}: si la
+ *       cámara repite un cuadro, el instrumento se rearma en medio del golpe y sin
+ *       este tiempo mínimo el mismo golpe sonaría dos veces.</li>
  * </ul>
  */
 public class WebcamInstrument extends Instrument {
 
     private final IFrameSource source;
+    private final LongSupplier clock;
     private final HandTracker tracker = new HandTracker(CAM_GRID_WIDTH, CAM_GRID_HEIGHT);
     private final Object lifecycleLock = new Object(); // start/stop; aparte del lock de process
 
     private boolean armed = true;
+    /** Hora del último disparo; arranca un intervalo atrás para que el primer golpe suene. */
+    private long lastStrikeMs = -CAM_MIN_STRIKE_INTERVAL_MS;
 
     private volatile boolean running;
     private Thread thread;
 
     public WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource) {
+        this(pCommand, pSource, System::currentTimeMillis);
+    }
+
+    /**
+     * @param pClock hora actual en milisegundos; las pruebas pasan un reloj falso
+     *               para controlar el tiempo entre golpes
+     */
+    public WebcamInstrument(ISynthCommand pCommand, IFrameSource pSource, LongSupplier pClock) {
         super(pCommand);
         if (pSource == null) {
             throw new IllegalArgumentException(ERR_NULL_FRAME_SOURCE);
         }
+        if (pClock == null) {
+            throw new IllegalArgumentException(ERR_NULL_CLOCK);
+        }
         source = pSource;
+        clock = pClock;
     }
 
     /**
@@ -112,6 +133,11 @@ public class WebcamInstrument extends Instrument {
         }
         if (motion >= CAM_STRIKE_MOTION && armed) {
             armed = false;
+            long now = clock.getAsLong();
+            if (now - lastStrikeMs < CAM_MIN_STRIKE_INTERVAL_MS) {
+                return; // es el mismo golpe: la cámara repitió un cuadro y nos rearmó
+            }
+            lastStrikeMs = now;
             play(SynthEvent.piano(heightToNote(pReading.getY()), CAM_DUR_MS,
                     thirdFor(pReading.getX()), ampFor(motion)));
         }

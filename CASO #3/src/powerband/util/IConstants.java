@@ -244,6 +244,8 @@ public interface IConstants {
     public static final float CAM_AMP_GAIN = 4f;
     public static final float CAM_MIN_AMP = 0.15f;
     public static final float CAM_MAX_AMP = 0.6f;
+    /** Tiempo mínimo entre dos disparos: evita que un golpe suene dos veces si la cámara repite un cuadro. */
+    public static final long CAM_MIN_STRIKE_INTERVAL_MS = 250L;
     public static final long CAM_POLL_INTERVAL_MS = 33L;
     public static final long CAM_RETRY_WAIT_MS = 500L;
     public static final long CAM_STOP_TIMEOUT_MS = 1000L;
@@ -319,6 +321,7 @@ public interface IConstants {
     public static final String ERR_NO_WEBCAM = "No hay ninguna webcam disponible";
     public static final String ERR_WEBCAM_OPEN = "No se pudo abrir la webcam";
     public static final String ERR_WEBCAM_ALREADY_STARTED = "La webcam ya está iniciada";
+    public static final String ERR_NULL_CLOCK = "El reloj no puede ser null";
     public static final String ERR_NULL_FRAME_SOURCE = "La fuente de cuadros no puede ser null";
     public static final String ERR_WEBCAM_PLAY = "No se pudo tocar el acorde de la webcam: ";
     public static final String ERR_NO_GAMEPAD = "No hay ningún control conectado";

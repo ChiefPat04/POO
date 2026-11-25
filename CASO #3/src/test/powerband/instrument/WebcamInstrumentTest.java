@@ -8,7 +8,9 @@ import static powerband.util.IConstants.CAM_AMP_GAIN;
 import static powerband.util.IConstants.CAM_DUR_MS;
 import static powerband.util.IConstants.CAM_MAX_AMP;
 import static powerband.util.IConstants.CAM_MIN_AMP;
+import static powerband.util.IConstants.CAM_MIN_STRIKE_INTERVAL_MS;
 import static powerband.util.IConstants.CAM_REARM_MOTION;
+import static powerband.util.IConstants.CAM_SPLIT_X;
 import static powerband.util.IConstants.CAM_STRIKE_MOTION;
 import static powerband.util.IConstants.C_MAJOR_SCALE;
 import static powerband.util.IConstants.OCTAVE_SEMITONES;
@@ -50,12 +52,16 @@ class WebcamInstrumentTest {
     private RecordingCommand command;
     private FakeFrameSource source;
     private WebcamInstrument webcam;
+    /** Reloj falso: avanza un intervalo completo en cada lectura, así los golpes de las pruebas no chocan con el tiempo mínimo. */
+    private long fakeNowMs;
+    /** Reloj manual para las pruebas del tiempo mínimo. */
+    private long manualNowMs;
 
     @BeforeEach
     void setUp() {
         command = new RecordingCommand();
         source = new FakeFrameSource();
-        webcam = new WebcamInstrument(command, source);
+        webcam = new WebcamInstrument(command, source, () -> fakeNowMs += CAM_MIN_STRIKE_INTERVAL_MS);
     }
 
     // ------------------------------------------------------------ reglas
@@ -116,6 +122,24 @@ class WebcamInstrumentTest {
     }
 
     @Test
+    void strikesTooCloseTogetherPlayOnce() throws Exception {
+        WebcamInstrument timed = new WebcamInstrument(command, source, () -> manualNowMs);
+        manualNowMs = 1000L;
+        timed.process(hand(CENTER, CENTER, STRIKE));
+        timed.process(HandReading.absent()); // cuadro repetido: se rearma en medio del golpe
+        manualNowMs += CAM_MIN_STRIKE_INTERVAL_MS / 2;
+        timed.process(hand(CENTER, CENTER, STRIKE));
+
+        assertEquals(1, command.getEvents().size());
+
+        timed.process(HandReading.absent());
+        manualNowMs += CAM_MIN_STRIKE_INTERVAL_MS;
+        timed.process(hand(CENTER, CENTER, STRIKE));
+
+        assertEquals(2, command.getEvents().size());
+    }
+
+    @Test
     void topOfImageIsHighestNote() throws Exception {
         webcam.process(hand(CENTER, 0f, STRIKE));
 
@@ -162,6 +186,13 @@ class WebcamInstrumentTest {
 
         assertEquals(THIRD_MAJOR, command.getEvents().get(0).getThird());
         assertEquals(THIRD_MINOR, command.getEvents().get(1).getThird());
+    }
+
+    @Test
+    void splitPointIsMinor() throws Exception {
+        webcam.process(hand(CAM_SPLIT_X, CENTER, STRIKE));
+
+        assertEquals(THIRD_MINOR, command.getEvents().get(0).getThird());
     }
 
     @Test
