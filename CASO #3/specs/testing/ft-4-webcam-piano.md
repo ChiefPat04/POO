@@ -40,10 +40,12 @@ status: approved
   - `absentHandRearms`: fuerte, `absent()`, fuerte → dos eventos.
   - `motionBetweenThresholdsDoesNotRearm`: fuerte, intermedia, fuerte → un evento.
   - `motionBetweenThresholdsDoesNotTrigger`: sin golpe previo, solo intermedias → nada.
+  - `strikesTooCloseTogetherPlayOnce`: golpe, rearme y otro golpe con menos de `CAM_MIN_STRIKE_INTERVAL_MS` entre ellos → un solo evento; si pasa ese tiempo, el segundo sí suena.
   - `topOfImageIsHighestNote` (`y = 0` → 72) y `bottomOfImageIsLowestNote` (`y = 1` → 48).
   - `heightToNoteCoversScaleInOrder`: recorriendo `y` de 1 a 0 las notas suben sin saltarse grados: 48, 50, 52, 53, 55, 57, 59, 60, …, 72.
   - `allNotesAreInRangeAndInCMajor`: muchas alturas, incluidas fuera de 0..1.
   - `leftSideIsMajorRightSideIsMinor`.
+  - `splitPointIsMinor`: `x = CAM_SPLIT_X` exacto → `THIRD_MINOR`.
   - `ampFollowsMotionAndIsClamped`: golpe justo en el umbral, uno intermedio y uno enorme.
   - `durationIsFixed`: `durMs` = `CAM_DUR_MS`.
 - `WebcamInstrumentTest` — ciclo de vida, con el hilo real:

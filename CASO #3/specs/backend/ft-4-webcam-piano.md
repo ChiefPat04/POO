@@ -40,6 +40,7 @@ status: approved
   - `motion ≥ CAM_STRIKE_MOTION` con el instrumento armado → un `TRIGGER` de `PIANO`.
   - Mientras el movimiento sigue alto no se repite el disparo.
   - Se rearma cuando `motion < CAM_REARM_MOTION` o la mano desaparece; entonces otro golpe vuelve a disparar.
+  - Dos golpes con menos de `CAM_MIN_STRIKE_INTERVAL_MS` entre sí dan un solo acorde, aunque el instrumento se haya rearmado en medio.
   - Con `motion` entre `CAM_REARM_MOTION` y `CAM_STRIKE_MOTION` ni dispara ni se rearma.
   - Nota según la altura: `y = 0` (arriba) → 72; `y = 1` (abajo) → 48. Bandas de igual alto, una por nota de Do mayor entre 48 y 72 (15 notas).
   - Toda nota está entre `PIANO_MIN_NOTE` (48) y `PIANO_MAX_NOTE` (72) y en la escala de Do mayor.
@@ -74,7 +75,7 @@ status: approved
   - Rango: `PIANO_MIN_NOTE` (48), `PIANO_MAX_NOTE` (72), `PIANO_ROOT_NOTE` (48, Do3), `CAM_MAX_STEP` (14: dos octavas de Do mayor).
   - Cuadrícula: `CAM_GRID_WIDTH` (64), `CAM_GRID_HEIGHT` (48), `CAM_PIXEL_THRESHOLD` (30, en 0..255), `CAM_MIRROR` (true), `CAM_PIXEL_CENTER` (0.5f).
   - Movimiento (fracción de la cuadrícula): `CAM_MIN_MOTION` (0.01f), `CAM_REARM_MOTION` (0.02f), `CAM_STRIKE_MOTION` (0.06f), `CAM_MAX_MOTION` (0.5f).
-  - Disparo: `CAM_SPLIT_X` (0.5f), `CAM_DUR_MS` (1000), `CAM_AMP_GAIN` (4f), `CAM_MIN_AMP` (0.15f), `CAM_MAX_AMP` (0.6f).
+  - Disparo: `CAM_SPLIT_X` (0.5f), `CAM_DUR_MS` (1000), `CAM_AMP_GAIN` (4f), `CAM_MIN_AMP` (0.15f), `CAM_MAX_AMP` (0.6f), `CAM_MIN_STRIKE_INTERVAL_MS` (250).
   - Hilo: `CAM_POLL_INTERVAL_MS` (33), `CAM_RETRY_WAIT_MS` (500), `CAM_STOP_TIMEOUT_MS` (1000), `CAM_THREAD_NAME`.
   - Mensajes: `ERR_NO_WEBCAM`, `ERR_WEBCAM_OPEN`, `ERR_WEBCAM_ALREADY_STARTED`, `ERR_NULL_FRAME_SOURCE`, `ERR_WEBCAM_PLAY`.
 - Los umbrales son valores iniciales: hay que ajustarlos con la webcam, la luz y la distancia reales.
@@ -97,8 +98,9 @@ status: approved
 - `heightToNote`: limita `y` a 0..1; `paso = min(CAM_MAX_STEP, (int) ((1 − y) × (CAM_MAX_STEP + 1)))`; `nota = PIANO_ROOT_NOTE + OCTAVE_SEMITONES × floorDiv(paso, 7) + C_MAJOR_SCALE[floorMod(paso, 7)]`; al final se limita a `PIANO_MIN_NOTE`..`PIANO_MAX_NOTE`. El 7 sale de `C_MAJOR_SCALE.size()`.
 - `WebcamInstrument.process` (`synchronized`), con una bandera `armed` (empieza en `true`):
   1. Ausente o `motion < CAM_REARM_MOTION` → `armed = true` y nada más.
-  2. `motion ≥ CAM_STRIKE_MOTION` y `armed` → `armed = false` y `play(SynthEvent.piano(heightToNote(y), CAM_DUR_MS, tercera, amp))`.
+  2. `motion ≥ CAM_STRIKE_MOTION`, `armed` y pasaron al menos `CAM_MIN_STRIKE_INTERVAL_MS` desde el último disparo → `armed = false`, se guarda la hora del disparo y `play(SynthEvent.piano(heightToNote(y), CAM_DUR_MS, tercera, amp))`.
   3. Cualquier otro caso → nada (histéresis, igual que el stick en ft-3).
+  - El tiempo mínimo entre disparos evita que un solo golpe suene dos veces: la cámara a veces entrega el mismo cuadro dos veces, eso da movimiento 0 y rearmaba el instrumento en medio del golpe.
 - Hilo: daemon, con nombre `CAM_THREAD_NAME`. Ciclo: `read()`; si es `null`, `tracker.reset()`, `process(HandReading.absent())`, espera `CAM_RETRY_WAIT_MS` y sigue; si no, `process(tracker.track(cuadro))` y espera `CAM_POLL_INTERVAL_MS`.
 - El hilo no puede lanzar `SynthConnectionException`: la reporta en `System.err` con `ERR_WEBCAM_PLAY` y sigue. Nunca `catch` vacío.
 - `start()` y `stop()` usan un lock propio, distinto del de `process`, para que `stop()` no espere al hilo (igual que `MicrophoneInstrument`).
